@@ -1,132 +1,63 @@
 # MestrIA
-Uma plataforma web de RPG de mesa potencializada por Inteligência Artificial. A aplicação permite a criação de campanhas multiplayer em tempo real. O grande diferencial é a integração com LLMs, onde a IA atua como o Dungeon Master (Mestre), gerando narrativas dinâmicas, controlando NPCs, validando regras e respondendo às ações dos jogadores.
 
-Documento de Visão e Arquitetura: Plataforma de RPG com IA Mestra
-1. Visão Geral do Projeto
-O projeto consiste em uma plataforma web de Virtual Tabletop (VTT) desenvolvida para gerenciar campanhas de RPG de mesa multiplayer em tempo real. O principal diferencial e núcleo tecnológico do sistema é a substituição do Mestre de Jogo (Dungeon Master) humano por um modelo de Inteligência Artificial (LLM). A IA será responsável por narrar a história, arbitrar as regras do sistema, controlar NPCs, reagir às decisões dos jogadores e gerar consequências dinâmicas, mantendo a coesão narrativa através do gerenciamento de contexto feito pelo nosso backend.
+Plataforma web de RPG de mesa com backend em Node.js/TypeScript, banco PostgreSQL via Prisma e arquitetura para integração com LLMs (IA como Mestre de Jogo).
 
-2. Stack Tecnológico Definido
-A stack foi escolhida com base em modernidade, performance em tempo real e gratuidade/código aberto.
+## Status atual
 
-Frontend: React.js (inicializado via Vite para maior velocidade), utilizando TypeScript. Gerenciamento de estado complexo (fichas, chat e mapas) a ser definido (Zustand ou Redux).
+- Schema final do banco aplicado em `prisma/schema.prisma`:
+  - `PUBLIC_RACE`, `PUBLIC_CLASS`, `PUBLIC_ITEM_TEMPLATE`, `PUBLIC_SPELL_TEMPLATE`,
+    `PUBLIC_MONSTER_TEMPLATE`, `PUBLIC_MONSTER`, `PUBLIC_SESSION`, `PUBLIC_MESSAGE`,
+    `PUBLIC_COMBAT_ENCOUNTER`, `PUBLIC_MAP`, `PUBLIC_CAMPAIGN_MEMBER`,
+    `PUBLIC_PLAYER_CHARACTER`, `PUBLIC_CHARACTER_ITEM`, `PUBLIC_CHARACTER_SPELL`.
+- Enumes migrados: `DmType`, `SenderRole`, `SessionStatus`.
+- Entidades e repositórios injetáveis criados em `src/domain` + `src/infrastructure/prisma`.
+- Build TypeScript validado sem erros usando `npm run build`.
+- Markdown de documentação movido para `docs/`.
 
-Backend: Node.js com TypeScript. Framework web (Express ou Fastify).
+## Estrutura principal
 
-Comunicação em Tempo Real: WebSockets (via Socket.io) para sincronização instantânea de rolagens de dados, mensagens de chat e atualizações de vida/status.
+- `src/domain/entities`: modelos de domínio.
+- `src/domain/repositories`: contratos de repositório (interfaces).
+- `src/infrastructure/prisma/repositories`: implementação de repositories usando Prisma.
+- `src/infrastructure/http/server.ts`: servidor API (Express/Fastify) já integrado.
+- `prisma/schema.prisma`: definição de dados e migrações.
+- `seed.ts`: seed inicial de dados.
+- `docs/`: documentos de arquitetura, backlog e status.
 
-Banco de Dados: PostgreSQL, combinando estruturação relacional para entidades fixas e o tipo de dado JSONB para atributos dinâmicos e flexíveis de RPG.
+## Como rodar
 
-ORM (Object-Relational Mapping): Prisma, garantindo tipagem estática ponta a ponta e migrações seguras do banco de dados.
+1. Instalar dependências:
+   - `npm install`
+2. Ajustar `.env` (PostgreSQL e API keys caso use Groq/Ollama).
+3. Rodar migrações:
+   - `npx prisma migrate dev --name init`
+4. Seed:
+   - `npm run seed`
+5. Iniciar:
+   - `npm run dev`
 
-Motores de Inteligência Artificial: Modelos Open Source (Llama 3 ou Mixtral).
+## Pipelines e comandos úteis
 
-3. Arquitetura de Inteligência Artificial (O Core do Sistema)
-Como as LLMs são stateless (não possuem memória contínua das requisições anteriores), nosso backend em Node.js atuará como o "Cérebro de Contexto". A arquitetura de consumo de IA será baseada no padrão Circuit Breaker com Fallback Automático, garantindo custo zero e alta disponibilidade.
+- Compilar: `npm run build`
+- Testes: `npm test` (se presente)
+- Lint: `npm run lint`
+- Prisma Studio: `npx prisma studio`
 
-Estratégia de Redundância (Circuit Breaker):
+## Documentação
 
-Rota Principal (Cloud/API): O backend tentará primeiramente enviar o prompt para a API do Groq. O Groq hospedará nosso modelo Open Source escolhido, oferecendo respostas com latência ultrabaixa (quase instantâneas).
+- `docs/01-architecture.md`
+- `docs/02-prisma-schema.md`
+- `docs/03-phase-status.md`
+- `docs/04-post-merge-checklist.md`
 
-Tratamento de Erros: O Node.js monitorará o status HTTP da resposta. Se o Groq retornar 429 Too Many Requests (limite do plano gratuito atingido) ou estiver instável, o Circuit Breaker abre e intercepta a falha.
+## Próximos passos (recomendados)
 
-Rota Secundária (Fallback Local): Imediatamente, o backend redireciona a requisição, de forma transparente para os jogadores, para o Ollama, rodando localmente na sua máquina (via localhost:11434). A velocidade de geração de texto diminuirá (dependendo do seu hardware), mas a sessão de RPG não será interrompida. Quando a janela de tempo do Groq resetar, o sistema volta automaticamente para a Rota Principal.
+- Implementar casos de uso (use-cases / services) para as novas entidades.
+- Criar controladores/rotas REST para `Session`, `Message`, `PlayerCharacter` etc.
+- Integrar Socket.IO para troca em tempo real de mensagens e estado da campanha.
+- Adicionar testes unitários e de integração para repositórios e controllers.
 
-Gerenciamento de Contexto (A Memória da IA):
-A cada nova ação de um jogador, o Node.js montará um super-pacote de dados (O Prompt Mestre) contendo:
-A instrução base de comportamento da IA (O "Persona" do Mestre).
-O resumo dos acontecimentos da campanha até o momento.
-O histórico das últimas 10-20 interações do chat (para coesão imediata).
-Um objeto JSON atualizado com o HP, inventário e status do jogador que está agindo.
-A ação/texto que o jogador acabou de enviar.
+---
 
-4. Modelagem Estrutural do Banco de Dados (PostgreSQL)
-A base relacional garantirá a integridade, enquanto campos específicos usarão a flexibilidade do NoSQL dentro do Postgres.
-Tabela Users: Autenticação, e-mail, senhas (hasheadas) e configurações de perfil.
-Tabela Campaigns: O "Mundo". Terá um título, descrição, regras do sistema base (ex: D&D 5e, Tormenta) e uma chave de convite para multiplayer. Conterá um campo context_summary (um resumo gerado periodicamente pela própria IA para economizar tokens nas requisições futuras).
-
-Tabela Characters: Vinculada aos Usuários e às Campanhas. Terá colunas fixas (Nome, Classe, Nível, HP Atual, HP Máximo) e um campo attributes em JSONB, permitindo que cada personagem tenha árvores de habilidades, inventários e feitiços com estruturas completamente diferentes, sem quebrar o banco.
-
-Tabela Sessions/Messages: O histórico literal de tudo que foi dito e rolado. Relaciona quem enviou (Jogador X, Sistema/Bot de Dados, ou IA Mestra) com a Campanha e armazena o timestamp exato para ordenação no frontend.
-
-5. O Fluxo de Interação (Ciclo de Vida de uma Ação)
-Para deixar claro o que acontece por baixo dos panos durante a jogatina, este é o fluxo exato de uma rodada:
-O Jogador A digita no frontend React: "Eu saco minha espada e ataco o Goblin".
-O React envia essa ação para o Node.js via WebSocket.
-O Node.js salva a mensagem no PostgreSQL e avisa todos os outros jogadores na sala: "O Jogador A está atacando".
-O Node.js busca a ficha do Jogador A, os dados do Goblin e o histórico recente no banco.
-O Node.js empacota tudo isso e dispara para a API do Groq.
-Se o Groq falhar, o Node.js dispara o mesmo pacote para o Ollama local.
-A IA (Groq ou Ollama) processa as regras e gera o texto de resposta: "O goblin tenta esquivar, mas você é mais rápido. Role 1d20 para acerto."
-
-O Node.js recebe esse texto, salva no banco de dados como uma mensagem do System_DM e transmite via WebSocket para o frontend.
-
-A tela de todos os jogadores atualiza em tempo real com a fala do Mestre.
-
-## FrontEnd
-
-1. Identidade Visual e Vibe (O Design System)
-O Tema: Dark Mode nativo e inegociável. Fundos em tons de grafite/onix profundo (para não cansar a vista durante horas de jogo), com textos em branco gelo.
-
-Acentos Visuais: Dependendo do sistema (Fantasia, Sci-Fi), podemos usar acentos sutis. Para fantasia, bordas com um leve tom de dourado envelhecido e botões primários em um vermelho ou roxo místico.
-
-A Biblioteca: Recomendo usarmos Tailwind CSS acoplado com Shadcn/UI. Isso vai nos dar componentes de altíssima qualidade (modais, tooltips, cards) sem precisarmos reinventar a roda do CSS, mantendo o visual com cara de software profissional.
-
-2. A Jornada do Usuário: Tela a Tela
-A. O Lobby (Dashboard Inicial)
-Quando o usuário faz o login, ele não cai direto no jogo. Ele entra na sua "Taverna Pessoal".
-
-Header: Perfil do usuário, configurações e um botão de "Sair".
-
-Área Central (Meus Jogos): Um grid de Cards bem acabados. Cada card é uma Campanha. O card mostra o Título, o Sistema (ex: D&D 5e), quantos jogadores estão na mesa e o status (ex: "Sessão Ativa" com uma bolinha verde piscando se o Mestre/IA estiver online).
-
-Ações Rápidas: Dois botões grandes e chamativos: [ + Nova Campanha ] (onde ele define o escopo para a IA) e [ Entrar com Código ] (para colar o UUID de um convite).
-
-B. A Mesa Virtual (A Tela Principal de Jogo)
-Ao clicar em uma campanha, ele entra na tela de jogo. Aqui, a arquitetura visual usa o padrão clássico de 3 colunas (estilo Discord, mas otimizado para RPG).
-
-Coluna 1: A Party (Esquerda - 20% da tela)
-
-Uma lista vertical com os avatares de todos os jogadores da sessão.
-
-Ao lado de cada avatar, o nome do personagem e duas barras minimalistas: HP (Vida) e Mana/Recurso. Como estamos usando WebSockets, se o jogador ao lado tomar dano, a barrinha dele desce em tempo real na tela de todo mundo.
-
-Indicadores de status: Ícones pequenos se o personagem está "Envenenado", "Invisível", etc.
-
-Coluna 2: O Palco Narrativo (Centro - 55% da tela)
-
-Este é o coração da aplicação. Um chat robusto e expansivo.
-
-Mensagens da IA (O Mestre): Aparecem com uma formatação diferenciada, talvez um leve fundo texturizado e fonte em negrito para descrições de cenário. O texto não aparece todo de uma vez; ele usa um efeito de Typewriter (digitando letra por letra) para simular o mestre falando e dar tempo para os jogadores lerem.
-
-Ações dos Jogadores: Balões de chat alinhados à direita (como no WhatsApp), mostrando o que o personagem disse ou fez.
-
-Cards de Rolagem (Os Dados): Quando alguém rola um dado, não aparece um texto simples. O sistema injeta um "Card" no meio do chat mostrando: Quem rolou, o ícone do dado (D20), o valor puro, os modificadores somados e o Total em destaque. Se for um Acerto Crítico (20), o card brilha com uma animação em CSS.
-
-Coluna 3: A Ficha Dinâmica (Direita - 25% da tela)
-
-Lembra do nosso campo JSONB no PostgreSQL? É aqui que ele ganha vida. O React vai ler esse JSON e renderizar abas.
-
-Aba Status: Atributos principais (Força, Destreza), Classe de Armadura (AC), e botões rápidos (ex: Clicar no número da "Força" já rola um teste automaticamente no chat central).
-
-Aba Inventário: Uma lista de itens. Se o jogador usa uma poção, ele clica aqui, o React deduz 1 do JSON, avisa o backend, e narra no chat.
-
-Aba Magias/Habilidades: Cards colapsáveis (accordions) com a descrição das magias para consulta rápida.
-
-A Barra Inferior: O Centro de Comando
-
-Fica colada na base da tela central (abaixo do chat).
-
-Input de Texto: Uma barra rica de digitação.
-
-Seletores de Intenção: Antes de enviar a mensagem, o jogador seleciona se aquilo é uma Fala (diálogo do personagem), uma Ação ("eu pulo a janela") ou algo em Off (falar com os amigos fora do jogo). Isso ajuda a IA a interpretar corretamente o contexto.
-
-Bandeja de Dados (Quick Rolls): Botões pequenos (D4, D6, D8, D20) para clicar e rolar direto, sem precisar digitar comandos complexos.
-
-3. Microinterações e Feedback Visual (A Mágica do Frontend)
-Para o sistema não parecer apenas um "fórum de texto genérico", nós vamos implementar respostas visuais:
-
-Indicador de Processamento: Quando a requisição bate no nosso Node.js e vai pro Groq/Ollama, aparece no chat central: "O Mestre está pensando na sua desgraça..." com um spinner animado.
-
-Sincronização Otimista: Quando o jogador clica em "Atacar", o card já aparece cinza na tela dele na mesma hora, enquanto aguarda o WebSocket confirmar com o servidor, dando a sensação de latência zero.
-
-Notificações Flutuantes (Toasts): Alertas no canto da tela (ex: "Gu entrou na Taverna", "Sua vez de jogar!").
+Made with ❤️ e LLM-friendly architecture.
+****
