@@ -26,7 +26,7 @@ export class MessageRepository implements IMessageRepository {
         senderId: message.senderId,
         campaignId: message.campaignId,
         senderRole: message.senderRole,
-        diceRoll: message.diceRoll,
+        diceRoll: message.diceRoll === null ? undefined : message.diceRoll,
         isWhisper: message.isWhisper,
       },
     });

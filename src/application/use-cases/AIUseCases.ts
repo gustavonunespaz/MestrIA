@@ -4,9 +4,9 @@ import { AppError } from '@shared/errors/AppError';
 
 export interface GenerateAIResponseDTO {
   campaignId: string;
-  characterId?: string;
+  characterId?: string | null;
   userMessage: string;
-  type?: 'narrative' | 'combat-action' | 'evaluate-action';
+  type?: 'narrative' | 'combat-action' | 'evaluate-action' | null;
 }
 
 export interface AIResponseDTO {

@@ -6,8 +6,8 @@ export class CreateCharacterDTO {
   level: number;
   hpCurrent: number;
   hpMax: number;
-  isBot?: boolean;
-  botType?: string;
+  isBot?: boolean | null;
+  botType?: string | null;
   attributes: {
     strength: number;
     dexterity: number;
@@ -25,8 +25,8 @@ export class CreateCharacterDTO {
     level: number;
     hpCurrent: number;
     hpMax: number;
-    isBot?: boolean;
-    botType?: string;
+    isBot?: boolean | null;
+    botType?: string | null;
     attributes: {
       strength: number;
       dexterity: number;
@@ -54,8 +54,8 @@ export class UpdateCharacterDTO {
   level?: number;
   hpCurrent?: number;
   hpMax?: number;
-  isBot?: boolean;
-  botType?: string;
+  isBot?: boolean | null;
+  botType?: string | null;
   attributes?: {
     strength?: number;
     dexterity?: number;
@@ -70,8 +70,8 @@ export class UpdateCharacterDTO {
     level?: number;
     hpCurrent?: number;
     hpMax?: number;
-    isBot?: boolean;
-    botType?: string;
+    isBot?: boolean | null;
+    botType?: string | null;
     attributes?: {
       strength?: number;
       dexterity?: number;
@@ -97,8 +97,8 @@ export class CharacterResponseDTO {
   level: number;
   hpCurrent: number;
   hpMax: number;
-  isBot?: boolean;
-  botType?: string;
+  isBot?: boolean | null;
+  botType?: string | null;
   userId: string;
   campaignId: string;
   raceId: string;
@@ -120,8 +120,8 @@ export class CharacterResponseDTO {
     level: number;
     hpCurrent: number;
     hpMax: number;
-    isBot?: boolean;
-    botType?: string;
+    isBot?: boolean | null;
+    botType?: string | null;
     userId: string;
     campaignId: string;
     raceId: string;

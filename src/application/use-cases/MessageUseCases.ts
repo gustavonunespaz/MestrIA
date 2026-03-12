@@ -85,7 +85,7 @@ export class UpdateMessageUseCase {
     // Atualizar campos
     if (dto.content) message.content = dto.content;
     if (dto.diceRoll !== undefined) message.diceRoll = dto.diceRoll;
-    if (dto.isWhisper !== undefined) message.isWhisper = dto.isWhisper;
+    if (dto.isWhisper !== undefined && dto.isWhisper !== null) message.isWhisper = dto.isWhisper;
 
     // Nota: Para mensagens, geralmente não há update, apenas delete
     // Mas mantemos essa operação disponível

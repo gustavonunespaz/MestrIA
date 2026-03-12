@@ -1,11 +1,11 @@
 export class CreateRaceDTO {
   name: string;
-  description?: string;
+  description?: string | null;
   traits: Record<string, any>;
 
   constructor(data: {
     name: string;
-    description?: string;
+    description?: string | null;
     traits: Record<string, any>;
   }) {
     this.name = data.name;
@@ -16,12 +16,12 @@ export class CreateRaceDTO {
 
 export class UpdateRaceDTO {
   name?: string;
-  description?: string;
+  description?: string | null;
   traits?: Record<string, any>;
 
   constructor(data: {
     name?: string;
-    description?: string;
+    description?: string | null;
     traits?: Record<string, any>;
   }) {
     this.name = data.name;
@@ -33,13 +33,13 @@ export class UpdateRaceDTO {
 export class RaceResponseDTO {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   traits: Record<string, any>;
 
   constructor(data: {
     id: string;
     name: string;
-    description?: string;
+    description?: string | null;
     traits: Record<string, any>;
   }) {
     this.id = data.id;

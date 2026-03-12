@@ -46,9 +46,10 @@ export class CombatService {
       where: { id: { in: playerCharacterIds } },
     });
 
-    // Buscar monstros
+    // Buscar monstros (incluindo template para hpMax e armorClass)
     const monsters = await prisma.monster.findMany({
       where: { id: { in: monsterIds } },
+      include: { template: true },
     });
 
     // Preparar participantes
@@ -78,9 +79,9 @@ export class CombatService {
         id: StringUtils.generateId(),
         characterId: monster.id,
         name: monster.name,
-        hpCurrent: monster.hpCurrent || monster.hpMax,
-        hpMax: monster.hpMax,
-        armorClass: monster.armorClass || 10,
+        hpCurrent: monster.template.hitPoints,
+        hpMax: monster.template.hitPoints,
+        armorClass: monster.template.armorClass || 10,
         initiativeResult: 0,
         dexterityModifier: 0,
         isPlayerCharacter: false,
@@ -191,16 +192,8 @@ export class CombatService {
         throw new Error('Ação desconhecida');
     }
 
-    // Registrar no banco
-    await prisma.combatLog.create({
-      data: {
-        id: StringUtils.generateId(),
-        encounterId,
-        participantId,
-        action,
-        result: JSON.stringify(result),
-      },
-    });
+    // Log da ação (CombatLog model não existe no schema ainda)
+    console.log(`[Combat] Action: ${action} by ${participantId} in encounter ${encounterId}`);
 
     // Notificar na campanha
     await this.chatService.sendSystemMessage(campaignId, `⚔️ ${result.message || 'Ação executada'}`);
@@ -252,7 +245,7 @@ export class CombatService {
     spellName: string,
   ): Promise<any> {
     // Buscar feitiço
-    const spell = await prisma.spell.findFirst({
+    const spell = await prisma.spellTemplate.findFirst({
       where: { name: spellName },
     });
 

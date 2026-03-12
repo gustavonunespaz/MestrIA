@@ -2,7 +2,7 @@ export interface ItemTemplateProps {
   id: string;
   name: string;
   type: string;
-  description?: string;
+  description?: string | null;
   properties: Record<string, any>;
 }
 
@@ -25,7 +25,7 @@ export class ItemTemplate {
     return this.props.type;
   }
 
-  get description(): string | undefined {
+  get description(): string | null | undefined {
     return this.props.description;
   }
 

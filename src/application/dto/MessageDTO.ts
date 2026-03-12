@@ -4,16 +4,16 @@ export class CreateMessageDTO {
   content: string;
   senderId: string;
   campaignId: string;
-  senderRole?: SenderRole;
-  diceRoll?: Record<string, any>;
+  senderRole?: SenderRole | null;
+  diceRoll?: Record<string, any> | null;
   isWhisper: boolean;
 
   constructor(data: {
     content: string;
     senderId: string;
     campaignId: string;
-    senderRole?: SenderRole;
-    diceRoll?: Record<string, any>;
+    senderRole?: SenderRole | null;
+    diceRoll?: Record<string, any> | null;
     isWhisper: boolean;
   }) {
     this.content = data.content;
@@ -26,14 +26,14 @@ export class CreateMessageDTO {
 }
 
 export class UpdateMessageDTO {
-  content?: string;
-  diceRoll?: Record<string, any>;
-  isWhisper?: boolean;
+  content?: string | null;
+  diceRoll?: Record<string, any> | null;
+  isWhisper?: boolean | null;
 
   constructor(data: {
-    content?: string;
-    diceRoll?: Record<string, any>;
-    isWhisper?: boolean;
+    content?: string | null;
+    diceRoll?: Record<string, any> | null;
+    isWhisper?: boolean | null;
   }) {
     this.content = data.content;
     this.diceRoll = data.diceRoll;
@@ -46,8 +46,8 @@ export class MessageResponseDTO {
   content: string;
   senderId: string;
   campaignId: string;
-  senderRole?: SenderRole;
-  diceRoll?: Record<string, any>;
+  senderRole?: SenderRole | null;
+  diceRoll?: Record<string, any> | null;
   isWhisper: boolean;
   createdAt: Date;
 
@@ -56,8 +56,8 @@ export class MessageResponseDTO {
     content: string;
     senderId: string;
     campaignId: string;
-    senderRole?: SenderRole;
-    diceRoll?: Record<string, any>;
+    senderRole?: SenderRole | null;
+    diceRoll?: Record<string, any> | null;
     isWhisper: boolean;
     createdAt: Date;
   }) {

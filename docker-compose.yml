@@ -37,7 +37,6 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm start
 
   ollama:
     image: ollama/ollama

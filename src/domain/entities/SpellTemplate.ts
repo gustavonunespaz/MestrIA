@@ -6,7 +6,8 @@ export interface SpellTemplateProps {
   castingTime?: string;
   range?: string;
   duration?: string;
-  description?: string;
+  description?: string | null;
+  higherLevel?: string | null;
   damage?: Record<string, any>;
 }
 
@@ -45,7 +46,7 @@ export class SpellTemplate {
     return this.props.duration;
   }
 
-  get description(): string | undefined {
+  get description(): string | null | undefined {
     return this.props.description;
   }
 

@@ -19,12 +19,12 @@ export class CreateCampaignDTO {
 
 export class UpdateCampaignDTO {
   title?: string;
-  description?: string;
+  description?: string | null;
   systemBase?: string;
 
   constructor(data: {
     title?: string;
-    description?: string;
+    description?: string | null;
     systemBase?: string;
   }) {
     this.title = data.title;
@@ -36,22 +36,22 @@ export class UpdateCampaignDTO {
 export class CampaignResponseDTO {
   id: string;
   title: string;
-  description: string;
+  description?: string | null;
   systemBase: string;
   dmType: 'AI' | 'HUMAN';
   creatorId: string;
-  inviteCode: string;
+  inviteCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
 
   constructor(data: {
     id: string;
     title: string;
-    description: string;
+    description?: string | null;
     systemBase: string;
     dmType: 'AI' | 'HUMAN';
     creatorId: string;
-    inviteCode: string;
+    inviteCode?: string | null;
     createdAt: Date;
     updatedAt: Date;
   }) {

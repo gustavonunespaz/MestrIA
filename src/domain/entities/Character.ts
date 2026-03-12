@@ -4,8 +4,8 @@ export interface CharacterProps {
   level: number;
   hpCurrent: number;
   hpMax: number;
-  isBot?: boolean;
-  botType?: string;
+  isBot?: boolean | null;
+  botType?: string | null;
   userId: string;
   campaignId: string;
   raceId: string;
@@ -28,8 +28,8 @@ export class Character {
   level: number;
   hpCurrent: number;
   hpMax: number;
-  isBot?: boolean;
-  botType?: string;
+  isBot?: boolean | null;
+  botType?: string | null;
   userId: string;
   campaignId: string;
   raceId: string;

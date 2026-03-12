@@ -1,7 +1,7 @@
 export interface ClassProps {
   id: string;
   name: string;
-  description?: string;
+  description?: string | null;
   hitDice: string;
 }
 
@@ -24,11 +24,11 @@ export class Class {
     this.props.name = value;
   }
 
-  get description(): string | undefined {
+  get description(): string | null | undefined {
     return this.props.description;
   }
 
-  set description(value: string | undefined) {
+  set description(value: string | null | undefined) {
     this.props.description = value;
   }
 

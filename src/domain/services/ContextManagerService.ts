@@ -5,7 +5,7 @@ export interface CampaignContextData {
   systemBase: string;
   dmType: string;
   description: string;
-  currentSessionTitle?: string;
+  currentSessionTitle?: string | null;
   playersCount: number;
 }
 

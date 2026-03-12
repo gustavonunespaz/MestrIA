@@ -1,17 +1,17 @@
 export type SessionStatus = 'PLANNED' | 'ACTIVE' | 'FINISHED';
 
 export class CreateSessionDTO {
-  title?: string;
+  title?: string | null;
   scheduledFor?: Date;
   status: SessionStatus;
-  summary?: string;
+  summary?: string | null;
   campaignId: string;
 
   constructor(data: {
-    title?: string;
+    title?: string | null;
     scheduledFor?: Date;
     status: SessionStatus;
-    summary?: string;
+    summary?: string | null;
     campaignId: string;
   }) {
     this.title = data.title;
@@ -23,16 +23,16 @@ export class CreateSessionDTO {
 }
 
 export class UpdateSessionDTO {
-  title?: string;
+  title?: string | null;
   scheduledFor?: Date;
   status?: SessionStatus;
-  summary?: string;
+  summary?: string | null;
 
   constructor(data: {
-    title?: string;
+    title?: string | null;
     scheduledFor?: Date;
     status?: SessionStatus;
-    summary?: string;
+    summary?: string | null;
   }) {
     this.title = data.title;
     this.scheduledFor = data.scheduledFor;
@@ -43,19 +43,19 @@ export class UpdateSessionDTO {
 
 export class SessionResponseDTO {
   id: string;
-  title?: string;
+  title?: string | null;
   scheduledFor?: Date;
   status: SessionStatus;
-  summary?: string;
+  summary?: string | null;
   campaignId: string;
   createdAt: Date;
 
   constructor(data: {
     id: string;
-    title?: string;
+    title?: string | null;
     scheduledFor?: Date;
     status: SessionStatus;
-    summary?: string;
+    summary?: string | null;
     campaignId: string;
     createdAt: Date;
   }) {

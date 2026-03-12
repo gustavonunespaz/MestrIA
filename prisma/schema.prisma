@@ -70,6 +70,7 @@ model Campaign {
   combatEncounters CombatEncounter[]
   maps             Map[]
   monsters         Monster[]
+  playerCharacters PlayerCharacter[]
 
   @@map("PUBLIC_CAMPAIGN")
 }
@@ -220,7 +221,7 @@ model Monster {
   campaignId        String   @db.Uuid
 
   // Relations
-  character Character       @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  character Character?      @relation(fields: [characterId], references: [id], onDelete: SetNull)
   template  MonsterTemplate @relation(fields: [monsterTemplateId], references: [id], onDelete: Restrict)
   campaign  Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
 

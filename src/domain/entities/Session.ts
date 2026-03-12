@@ -2,10 +2,10 @@ export type SessionStatus = 'PLANNED' | 'ACTIVE' | 'FINISHED';
 
 export interface SessionProps {
   id: string;
-  title?: string;
+  title?: string | null;
   scheduledFor?: Date;
   status: SessionStatus;
-  summary?: string;
+  summary?: string | null;
   campaignId: string;
   createdAt: Date;
 }
@@ -21,11 +21,11 @@ export class Session {
     return this.props.id;
   }
 
-  get title(): string | undefined {
+  get title(): string | null | undefined {
     return this.props.title;
   }
 
-  set title(value: string | undefined) {
+  set title(value: string | null | undefined) {
     this.props.title = value;
   }
 
@@ -45,11 +45,11 @@ export class Session {
     this.props.status = value;
   }
 
-  get summary(): string | undefined {
+  get summary(): string | null | undefined {
     return this.props.summary;
   }
 
-  set summary(value: string | undefined) {
+  set summary(value: string | null | undefined) {
     this.props.summary = value;
   }
 

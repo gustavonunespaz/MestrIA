@@ -3,8 +3,8 @@ import { JWTService } from '@infrastructure/auth/JWTService';
 import { AppError } from '@shared/errors/AppError';
 
 export interface AuthRequest extends Request {
-  userId?: string;
-  email?: string;
+  userId?: string | null;
+  email?: string | null;
 }
 
 const jwtService = new JWTService();

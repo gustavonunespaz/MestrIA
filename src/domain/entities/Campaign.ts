@@ -1,11 +1,11 @@
 export interface CampaignProps {
   id: string;
   title: string;
-  description: string;
+  description?: string | null;
   systemBase: string;
   dmType: 'AI' | 'HUMAN';
   creatorId: string;
-  inviteCode: string;
+  inviteCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -13,11 +13,11 @@ export interface CampaignProps {
 export class Campaign {
   id: string;
   title: string;
-  description: string;
+  description?: string | null;
   systemBase: string;
   dmType: 'AI' | 'HUMAN';
   creatorId: string;
-  inviteCode: string;
+  inviteCode?: string | null;
   createdAt: Date;
   updatedAt: Date;
 

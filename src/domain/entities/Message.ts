@@ -5,8 +5,8 @@ export interface MessageProps {
   content: string;
   senderId: string;
   campaignId: string;
-  senderRole?: SenderRole;
-  diceRoll?: Record<string, any>;
+  senderRole?: SenderRole | null;
+  diceRoll?: Record<string, any> | null;
   isWhisper: boolean;
   createdAt: Date;
 }
@@ -38,19 +38,19 @@ export class Message {
     return this.props.campaignId;
   }
 
-  get senderRole(): SenderRole | undefined {
+  get senderRole(): SenderRole | null | undefined {
     return this.props.senderRole;
   }
 
-  set senderRole(value: SenderRole | undefined) {
+  set senderRole(value: SenderRole | null | undefined) {
     this.props.senderRole = value;
   }
 
-  get diceRoll(): Record<string, any> | undefined {
+  get diceRoll(): Record<string, any> | null | undefined {
     return this.props.diceRoll;
   }
 
-  set diceRoll(value: Record<string, any> | undefined) {
+  set diceRoll(value: Record<string, any> | null | undefined) {
     this.props.diceRoll = value;
   }
 

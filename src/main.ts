@@ -5,6 +5,7 @@ const PORT = process.env.PORT || 3000;
 
 const server = createServer();
 
-server.listen(PORT, () => {
+// Use httpServer.listen() so Socket.IO is attached to the correct HTTP server
+(server as any).httpServer.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

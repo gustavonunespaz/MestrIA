@@ -3,7 +3,7 @@ export interface MonsterProps {
   name: string;
   monsterTemplateId: string;
   campaignId: string;
-  characterId?: string;
+  characterId?: string | null;
 }
 
 export class Monster {
@@ -29,7 +29,7 @@ export class Monster {
     return this.props.campaignId;
   }
 
-  get characterId(): string | undefined {
+  get characterId(): string | null | undefined {
     return this.props.characterId;
   }
 }
