@@ -20,11 +20,23 @@ export class Race {
     return this.props.name;
   }
 
+  set name(value: string) {
+    this.props.name = value;
+  }
+
   get description(): string | undefined {
     return this.props.description;
   }
 
+  set description(value: string | undefined) {
+    this.props.description = value;
+  }
+
   get traits(): Record<string, any> {
     return this.props.traits;
+  }
+
+  set traits(value: Record<string, any>) {
+    this.props.traits = value;
   }
 }

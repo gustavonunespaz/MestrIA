@@ -6,6 +6,8 @@ export class CreateCharacterDTO {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  isBot?: boolean;
+  botType?: string;
   attributes: {
     strength: number;
     dexterity: number;
@@ -23,6 +25,8 @@ export class CreateCharacterDTO {
     level: number;
     hpCurrent: number;
     hpMax: number;
+    isBot?: boolean;
+    botType?: string;
     attributes: {
       strength: number;
       dexterity: number;
@@ -32,6 +36,8 @@ export class CreateCharacterDTO {
       charisma: number;
     };
   }) {
+    this.isBot = data.isBot;
+    this.botType = data.botType;
     this.name = data.name;
     this.campaignId = data.campaignId;
     this.raceId = data.raceId;
@@ -48,6 +54,8 @@ export class UpdateCharacterDTO {
   level?: number;
   hpCurrent?: number;
   hpMax?: number;
+  isBot?: boolean;
+  botType?: string;
   attributes?: {
     strength?: number;
     dexterity?: number;
@@ -62,6 +70,8 @@ export class UpdateCharacterDTO {
     level?: number;
     hpCurrent?: number;
     hpMax?: number;
+    isBot?: boolean;
+    botType?: string;
     attributes?: {
       strength?: number;
       dexterity?: number;
@@ -75,6 +85,8 @@ export class UpdateCharacterDTO {
     this.level = data.level;
     this.hpCurrent = data.hpCurrent;
     this.hpMax = data.hpMax;
+    this.isBot = data.isBot;
+    this.botType = data.botType;
     this.attributes = data.attributes;
   }
 }
@@ -85,6 +97,8 @@ export class CharacterResponseDTO {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  isBot?: boolean;
+  botType?: string;
   userId: string;
   campaignId: string;
   raceId: string;
@@ -106,6 +120,8 @@ export class CharacterResponseDTO {
     level: number;
     hpCurrent: number;
     hpMax: number;
+    isBot?: boolean;
+    botType?: string;
     userId: string;
     campaignId: string;
     raceId: string;
@@ -121,6 +137,8 @@ export class CharacterResponseDTO {
     createdAt: Date;
     updatedAt: Date;
   }) {
+    this.isBot = data.isBot;
+    this.botType = data.botType;
     this.id = data.id;
     this.name = data.name;
     this.level = data.level;

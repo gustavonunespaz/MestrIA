@@ -94,6 +94,8 @@ model Character {
   level      Int      @default(1)
   hpCurrent  Int
   hpMax      Int
+  isBot      Boolean  @default(false)
+  botType    String?
   avatarUrl  String?
   attributes Json     @default("{}")
   isAlive    Boolean  @default(true)

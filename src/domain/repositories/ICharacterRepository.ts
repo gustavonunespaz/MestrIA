@@ -7,4 +7,6 @@ export interface ICharacterRepository {
   delete(id: string): Promise<boolean>;
   findByCampaignId(campaignId: string): Promise<Character[]>;
   findByUserId(userId: string): Promise<Character[]>;
+  findBotsByCampaignId(campaignId: string): Promise<Character[]>;
+  deleteBotsByCampaignId(campaignId: string): Promise<void>;
 }

@@ -26,6 +26,10 @@ export class Message {
     return this.props.content;
   }
 
+  set content(value: string) {
+    this.props.content = value;
+  }
+
   get senderId(): string {
     return this.props.senderId;
   }
@@ -38,12 +42,24 @@ export class Message {
     return this.props.senderRole;
   }
 
+  set senderRole(value: SenderRole | undefined) {
+    this.props.senderRole = value;
+  }
+
   get diceRoll(): Record<string, any> | undefined {
     return this.props.diceRoll;
   }
 
+  set diceRoll(value: Record<string, any> | undefined) {
+    this.props.diceRoll = value;
+  }
+
   get isWhisper(): boolean {
     return this.props.isWhisper;
+  }
+
+  set isWhisper(value: boolean) {
+    this.props.isWhisper = value;
   }
 
   get createdAt(): Date {
