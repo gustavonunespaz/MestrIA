@@ -1,0 +1,82 @@
+{
+  "client": "Thunder Client",
+  "collectionName": "MestrIA Backend",
+  "dateExport": "2024-03-12T15:30:00.000Z",
+  "version": "1.1",
+  "folders": [
+    {
+      "name": "Health",
+      "collectionId": "mestria-backend",
+      "requests": ["health-check"]
+    },
+    {
+      "name": "AI",
+      "collectionId": "mestria-backend",
+      "requests": ["ai-generate-narrative", "ai-circuit-breaker-status", "ai-circuit-breaker-reset"]
+    }
+  ],
+  "requests": [
+    {
+      "id": "health-check",
+      "name": "Health Check",
+      "method": "GET",
+      "url": "{{BASE_URL}}/health",
+      "headers": [],
+      "body": {},
+      "description": "Verify API is running"
+    },
+    {
+      "id": "ai-generate-narrative",
+      "name": "Generate AI Narrative",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/ai/generate",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "raw": {
+          "content": "{\n  \"campaignId\": \"{{CAMPAIGN_ID}}\",\n  \"message\": \"Thordak enters a dark tavern looking for clues about the lost mines\",\n  \"type\": \"narrative\"\n}"
+        }
+      },
+      "description": "Generate a narrative response from the AI DM (Groq with Ollama fallback)"
+    },
+    {
+      "id": "ai-circuit-breaker-status",
+      "name": "Circuit Breaker Status",
+      "method": "GET",
+      "url": "{{BASE_URL}}/api/ai/circuit-breaker/status",
+      "headers": [],
+      "body": {},
+      "description": "Check the state of Groq and Ollama circuit breakers"
+    },
+    {
+      "id": "ai-circuit-breaker-reset",
+      "name": "Reset Circuit Breakers",
+      "method": "POST",
+      "url": "{{BASE_URL}}/api/ai/circuit-breaker/reset",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {},
+      "description": "Reset circuit breakers if they're stuck in OPEN state"
+    }
+  ],
+  "variables": [
+    {
+      "name": "BASE_URL",
+      "value": "http://localhost:3000",
+      "description": "API base URL"
+    },
+    {
+      "name": "CAMPAIGN_ID",
+      "value": "your-campaign-id-here",
+      "description": "Get from Prisma Studio at http://localhost:5555"
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mestria-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: tdvlkw1!
+      POSTGRES_DB: mestria
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - mestria-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: mestria-api
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "postgresql://postgres:tdvlkw1!@postgres:5432/mestria"
+      NODE_ENV: development
+      PORT: 3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mestria-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+  ollama:
+    image: ollama/ollama
+    container_name: mestria-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - mestria-network
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  mestria-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  ollama_data:
