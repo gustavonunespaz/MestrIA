@@ -61,3 +61,72 @@ A IA (Groq ou Ollama) processa as regras e gera o texto de resposta: "O goblin t
 O Node.js recebe esse texto, salva no banco de dados como uma mensagem do System_DM e transmite via WebSocket para o frontend.
 
 A tela de todos os jogadores atualiza em tempo real com a fala do Mestre.
+
+## FrontEnd
+
+1. Identidade Visual e Vibe (O Design System)
+O Tema: Dark Mode nativo e inegociável. Fundos em tons de grafite/onix profundo (para não cansar a vista durante horas de jogo), com textos em branco gelo.
+
+Acentos Visuais: Dependendo do sistema (Fantasia, Sci-Fi), podemos usar acentos sutis. Para fantasia, bordas com um leve tom de dourado envelhecido e botões primários em um vermelho ou roxo místico.
+
+A Biblioteca: Recomendo usarmos Tailwind CSS acoplado com Shadcn/UI. Isso vai nos dar componentes de altíssima qualidade (modais, tooltips, cards) sem precisarmos reinventar a roda do CSS, mantendo o visual com cara de software profissional.
+
+2. A Jornada do Usuário: Tela a Tela
+A. O Lobby (Dashboard Inicial)
+Quando o usuário faz o login, ele não cai direto no jogo. Ele entra na sua "Taverna Pessoal".
+
+Header: Perfil do usuário, configurações e um botão de "Sair".
+
+Área Central (Meus Jogos): Um grid de Cards bem acabados. Cada card é uma Campanha. O card mostra o Título, o Sistema (ex: D&D 5e), quantos jogadores estão na mesa e o status (ex: "Sessão Ativa" com uma bolinha verde piscando se o Mestre/IA estiver online).
+
+Ações Rápidas: Dois botões grandes e chamativos: [ + Nova Campanha ] (onde ele define o escopo para a IA) e [ Entrar com Código ] (para colar o UUID de um convite).
+
+B. A Mesa Virtual (A Tela Principal de Jogo)
+Ao clicar em uma campanha, ele entra na tela de jogo. Aqui, a arquitetura visual usa o padrão clássico de 3 colunas (estilo Discord, mas otimizado para RPG).
+
+Coluna 1: A Party (Esquerda - 20% da tela)
+
+Uma lista vertical com os avatares de todos os jogadores da sessão.
+
+Ao lado de cada avatar, o nome do personagem e duas barras minimalistas: HP (Vida) e Mana/Recurso. Como estamos usando WebSockets, se o jogador ao lado tomar dano, a barrinha dele desce em tempo real na tela de todo mundo.
+
+Indicadores de status: Ícones pequenos se o personagem está "Envenenado", "Invisível", etc.
+
+Coluna 2: O Palco Narrativo (Centro - 55% da tela)
+
+Este é o coração da aplicação. Um chat robusto e expansivo.
+
+Mensagens da IA (O Mestre): Aparecem com uma formatação diferenciada, talvez um leve fundo texturizado e fonte em negrito para descrições de cenário. O texto não aparece todo de uma vez; ele usa um efeito de Typewriter (digitando letra por letra) para simular o mestre falando e dar tempo para os jogadores lerem.
+
+Ações dos Jogadores: Balões de chat alinhados à direita (como no WhatsApp), mostrando o que o personagem disse ou fez.
+
+Cards de Rolagem (Os Dados): Quando alguém rola um dado, não aparece um texto simples. O sistema injeta um "Card" no meio do chat mostrando: Quem rolou, o ícone do dado (D20), o valor puro, os modificadores somados e o Total em destaque. Se for um Acerto Crítico (20), o card brilha com uma animação em CSS.
+
+Coluna 3: A Ficha Dinâmica (Direita - 25% da tela)
+
+Lembra do nosso campo JSONB no PostgreSQL? É aqui que ele ganha vida. O React vai ler esse JSON e renderizar abas.
+
+Aba Status: Atributos principais (Força, Destreza), Classe de Armadura (AC), e botões rápidos (ex: Clicar no número da "Força" já rola um teste automaticamente no chat central).
+
+Aba Inventário: Uma lista de itens. Se o jogador usa uma poção, ele clica aqui, o React deduz 1 do JSON, avisa o backend, e narra no chat.
+
+Aba Magias/Habilidades: Cards colapsáveis (accordions) com a descrição das magias para consulta rápida.
+
+A Barra Inferior: O Centro de Comando
+
+Fica colada na base da tela central (abaixo do chat).
+
+Input de Texto: Uma barra rica de digitação.
+
+Seletores de Intenção: Antes de enviar a mensagem, o jogador seleciona se aquilo é uma Fala (diálogo do personagem), uma Ação ("eu pulo a janela") ou algo em Off (falar com os amigos fora do jogo). Isso ajuda a IA a interpretar corretamente o contexto.
+
+Bandeja de Dados (Quick Rolls): Botões pequenos (D4, D6, D8, D20) para clicar e rolar direto, sem precisar digitar comandos complexos.
+
+3. Microinterações e Feedback Visual (A Mágica do Frontend)
+Para o sistema não parecer apenas um "fórum de texto genérico", nós vamos implementar respostas visuais:
+
+Indicador de Processamento: Quando a requisição bate no nosso Node.js e vai pro Groq/Ollama, aparece no chat central: "O Mestre está pensando na sua desgraça..." com um spinner animado.
+
+Sincronização Otimista: Quando o jogador clica em "Atacar", o card já aparece cinza na tela dele na mesma hora, enquanto aguarda o WebSocket confirmar com o servidor, dando a sensação de latência zero.
+
+Notificações Flutuantes (Toasts): Alertas no canto da tela (ex: "Gu entrou na Taverna", "Sua vez de jogar!").
