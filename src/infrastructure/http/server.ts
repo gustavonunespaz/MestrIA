@@ -7,6 +7,11 @@ import { campaignRoutes } from '@presentation/routes/campaignRoutes';
 import { characterRoutes } from '@presentation/routes/characterRoutes';
 import { aiRoutes } from '@presentation/routes/aiRoutes';
 import { messageRoutes, setChatService } from '@presentation/routes/messageRoutes';
+import { raceRoutes } from '@presentation/routes/raceRoutes';
+import { classRoutes } from '@presentation/routes/classRoutes';
+import { messageControllerRoutes } from '@presentation/routes/messageControllerRoutes';
+import { sessionRoutes } from '@presentation/routes/sessionRoutes';
+import { botRoutes } from '@presentation/routes/botRoutes';
 import { ChatService } from '@infrastructure/socket/ChatService';
 import { combatRoutes, setCombatService } from '@presentation/controllers/CombatController';
 import { CombatService } from '@infrastructure/services/CombatService';
@@ -44,8 +49,13 @@ export function createServer(): express.Application & { io?: Server } {
   app.use('/api/campaigns', campaignRoutes);
   app.use('/api/characters', characterRoutes);
   app.use('/api/messages', messageRoutes);
+  app.use('/api/messages/crud', messageControllerRoutes);
+  app.use('/api/races', raceRoutes);
+  app.use('/api/classes', classRoutes);
+  app.use('/api/sessions', sessionRoutes);
   app.use('/api/combat', combatRoutes);
   app.use('/api/ai', aiRoutes);
+  app.use('/api/bots', botRoutes);
 
   // Error handling middleware
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: tdvlkw1!
       POSTGRES_DB: mestria
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -37,7 +37,7 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    command: npm run dev
+    command: npm start
 
   ollama:
     image: ollama/ollama

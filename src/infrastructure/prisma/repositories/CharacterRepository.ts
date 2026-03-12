@@ -18,6 +18,8 @@ export class CharacterRepository implements ICharacterRepository {
       level: character.level,
       hpCurrent: character.hpCurrent,
       hpMax: character.hpMax,
+      isBot: character.isBot,
+      botType: character.botType,
       userId: character.userId,
       campaignId: character.campaignId,
       raceId: character.raceId,
@@ -36,6 +38,8 @@ export class CharacterRepository implements ICharacterRepository {
         level: character.level,
         hpCurrent: character.hpCurrent,
         hpMax: character.hpMax,
+        isBot: character.isBot,
+        botType: character.botType,
         userId: character.userId,
         campaignId: character.campaignId,
         raceId: character.raceId,
@@ -68,6 +72,8 @@ export class CharacterRepository implements ICharacterRepository {
         level: character.level,
         hpCurrent: character.hpCurrent,
         hpMax: character.hpMax,
+        isBot: character.isBot,
+        botType: character.botType,
         attributes: character.attributes,
       },
     });
@@ -141,5 +147,37 @@ export class CharacterRepository implements ICharacterRepository {
           updatedAt: character.updatedAt,
         }),
     );
+  }
+
+  async findBotsByCampaignId(campaignId: string): Promise<Character[]> {
+    const bots = await prisma.character.findMany({
+      where: { campaignId, isBot: true },
+    });
+
+    return bots.map(
+      (character: any) =>
+        new Character({
+          id: character.id,
+          name: character.name,
+          level: character.level,
+          hpCurrent: character.hpCurrent,
+          hpMax: character.hpMax,
+          isBot: character.isBot,
+          botType: character.botType,
+          userId: character.userId,
+          campaignId: character.campaignId,
+          raceId: character.raceId,
+          classId: character.classId,
+          attributes: character.attributes as any,
+          createdAt: character.createdAt,
+          updatedAt: character.updatedAt,
+        }),
+    );
+  }
+
+  async deleteBotsByCampaignId(campaignId: string): Promise<void> {
+    await prisma.character.deleteMany({
+      where: { campaignId, isBot: true },
+    });
   }
 }

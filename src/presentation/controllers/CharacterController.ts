@@ -45,6 +45,8 @@ export class CharacterController {
         level,
         hpCurrent,
         hpMax,
+        isBot,
+        botType,
         attributes,
       } = req.body;
 
@@ -56,6 +58,8 @@ export class CharacterController {
         level,
         hpCurrent,
         hpMax,
+        isBot,
+        botType,
         attributes,
       });
 
@@ -90,7 +94,7 @@ export class CharacterController {
   async update(req: AuthRequest, res: Response): Promise<void> {
     try {
       const { id } = req.params;
-      const { name, level, hpCurrent, hpMax, attributes } = req.body;
+      const { name, level, hpCurrent, hpMax, attributes, isBot, botType } = req.body;
 
       const dto = new UpdateCharacterDTO({
         name,
@@ -98,6 +102,9 @@ export class CharacterController {
         hpCurrent,
         hpMax,
         attributes,
+        // allow updates to bot flags if necessary
+        ...(isBot !== undefined ? { isBot } : {}),
+        ...(botType !== undefined ? { botType } : {}),
       });
 
       const result = await this.updateCharacterUseCase.execute(id, dto);

@@ -25,16 +25,32 @@ export class Session {
     return this.props.title;
   }
 
+  set title(value: string | undefined) {
+    this.props.title = value;
+  }
+
   get scheduledFor(): Date | undefined {
     return this.props.scheduledFor;
+  }
+
+  set scheduledFor(value: Date | undefined) {
+    this.props.scheduledFor = value;
   }
 
   get status(): SessionStatus {
     return this.props.status;
   }
 
+  set status(value: SessionStatus) {
+    this.props.status = value;
+  }
+
   get summary(): string | undefined {
     return this.props.summary;
+  }
+
+  set summary(value: string | undefined) {
+    this.props.summary = value;
   }
 
   get campaignId(): string {
