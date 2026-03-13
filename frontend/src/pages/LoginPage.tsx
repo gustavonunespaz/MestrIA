@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Swords, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import mestriaLogo from '@/assets/mestria-logo.svg';
 
 const LoginPage = () => {
   const { login, register } = useAuth();
@@ -37,8 +38,8 @@ const LoginPage = () => {
         className="glass-panel w-full max-w-md p-8"
       >
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
-            <Swords className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+            <img src={mestriaLogo} alt="MestrIA" className="h-12 w-12" />
           </div>
           <h1 className="font-display text-3xl font-bold text-foreground">MestrIA</h1>
           <p className="mt-2 text-sm text-muted-foreground">Motor de RPG Inteligente</p>

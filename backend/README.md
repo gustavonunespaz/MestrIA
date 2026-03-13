@@ -19,7 +19,7 @@ Plataforma web de RPG de mesa com backend Node.js/TypeScript, banco PostgreSQL v
 
 ## Setup
 
-Consulte o **[guia completo de setup](docs/SETUP.md)** para instruções detalhadas.
+Consulte o **guia completo de setup** em `SETUP.md` na raiz do repositorio.
 
 ### Resumo rápido
 

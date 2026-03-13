@@ -3,6 +3,7 @@ import { CreateUserUseCase, GetUserByIdUseCase, LoginUseCase } from '@applicatio
 import { CreateUserDTO, LoginDTO } from '@application/dto/UserDTO';
 import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { AppError } from '@shared/errors/AppError';
+import { AuthRequest } from '@presentation/middlewares/authMiddleware';
 
 // Controller - Presentation layer
 export class UserController {
@@ -64,6 +65,26 @@ export class UserController {
       });
 
       const result = await this.loginUseCase.execute(dto);
+
+      res.json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        res.status(error.statusCode).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
+  async getMe(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        throw new AppError('Não autorizado', 401);
+      }
+
+      const result = await this.getUserByIdUseCase.execute(userId);
 
       res.json(result);
     } catch (error) {

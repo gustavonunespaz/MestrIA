@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
@@ -48,13 +48,43 @@ const CampaignPage = () => {
     enabled: !!id,
   });
 
+  const { data: races = [] } = useQuery({
+    queryKey: ['races'],
+    queryFn: api.getRaces,
+  });
+
+  const { data: classes = [] } = useQuery({
+    queryKey: ['classes'],
+    queryFn: api.getClasses,
+  });
+
+  const raceMap = useMemo(() => new Map(races.map((r) => [r.id, r])), [races]);
+  const classMap = useMemo(() => new Map(classes.map((c) => [c.id, c])), [classes]);
+  const charactersWithRefs = useMemo(
+    () =>
+      characters.map((char) => ({
+        ...char,
+        race: raceMap.get(char.raceId),
+        class: classMap.get(char.classId),
+      })),
+    [characters, raceMap, classMap],
+  );
+
   // Select first user character by default
   useEffect(() => {
-    if (characters.length && !selectedCharacter) {
-      const mine = characters.find(c => c.userId === user?.id) || characters[0];
+    if (charactersWithRefs.length && !selectedCharacter) {
+      const mine = charactersWithRefs.find(c => c.userId === user?.id) || charactersWithRefs[0];
       setSelectedCharacter(mine);
     }
-  }, [characters, user, selectedCharacter]);
+  }, [charactersWithRefs, user, selectedCharacter]);
+
+  useEffect(() => {
+    if (!selectedCharacter) return;
+    const updated = charactersWithRefs.find((c) => c.id === selectedCharacter.id);
+    if (updated && updated !== selectedCharacter) {
+      setSelectedCharacter(updated);
+    }
+  }, [charactersWithRefs, selectedCharacter]);
 
   // Socket.IO real-time
   useEffect(() => {
@@ -107,7 +137,7 @@ const CampaignPage = () => {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <div className="my-2 h-px w-8 bg-border" />
-        {characters.map((char) => (
+        {charactersWithRefs.map((char) => (
           <button
             key={char.id}
             onClick={() => setSelectedCharacter(char)}
@@ -229,7 +259,7 @@ const CampaignPage = () => {
                 <h3 className="font-display text-sm font-bold text-foreground">Membros do Grupo</h3>
                 <CreateCharacterDialog campaignId={id!} />
               </div>
-              {characters.map((char) => (
+              {charactersWithRefs.map((char) => (
                 <div key={char.id} className="flex items-center gap-3 rounded-lg bg-secondary/40 p-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
                     {char.name.charAt(0)}

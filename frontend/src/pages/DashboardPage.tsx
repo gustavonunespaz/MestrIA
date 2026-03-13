@@ -3,9 +3,10 @@ import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Swords, Users, ScrollText, LogOut, Plus } from 'lucide-react';
+import { Users, ScrollText, LogOut, Plus } from 'lucide-react';
 import { CreateCampaignDialog } from '@/components/CreateCampaignDialog';
 import type { Campaign } from '@/types/models';
+import mestriaLogo from '@/assets/mestria-logo.svg';
 
 const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }) => {
   const navigate = useNavigate();
@@ -55,7 +56,7 @@ const DashboardPage = () => {
       {/* Header */}
       <header className="glass-panel sticky top-0 z-50 flex items-center justify-between border-b border-border px-6 py-4">
         <div className="flex items-center gap-3">
-          <Swords className="h-6 w-6 text-primary" />
+          <img src={mestriaLogo} alt="MestrIA" className="h-7 w-7" />
           <h1 className="font-display text-xl font-bold text-foreground">MestrIA</h1>
         </div>
         <div className="flex items-center gap-4">

@@ -51,7 +51,7 @@ services:
       - mestria-network
     volumes:
       - .:/app
-    command: "npm run dev:frontend -- --host"
+    command: "sh -c \"cd /app/frontend && npm run dev -- --host 0.0.0.0 --port 5173\""
 
   ollama:
     image: ollama/ollama

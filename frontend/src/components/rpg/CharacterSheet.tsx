@@ -80,7 +80,9 @@ const CharacterSheet = ({ character }: Props) => {
       {/* Attributes */}
       <CollapsibleSection title="Atributos" icon={Shield}>
         <div className="grid grid-cols-3 gap-2">
-          {Object.entries(character.attributes).map(([key, val]) => (
+          {Object.entries(character.attributes)
+            .filter(([, val]) => typeof val === 'number')
+            .map(([key, val]) => (
             <div key={key} className="rounded-lg bg-secondary/40 p-2 text-center">
               <p className="text-[10px] uppercase text-muted-foreground">{ATTR_LABELS[key.toLowerCase()] || key}</p>
               <p className="text-lg font-bold text-foreground">{val as number}</p>

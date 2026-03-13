@@ -1,32 +1,54 @@
 import type { AuthResponse, Campaign, Character, LoginPayload, Message, User, Session, Race, CharClass } from '@/types/models';
 
-const API_BASE = 'http://localhost:3000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 function getToken(): string | null {
   return localStorage.getItem('mestria_token');
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8000);
   const token = getToken();
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || 'Request failed');
+  try {
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(err.message || 'Request failed');
+    }
+    return res.json();
+  } catch (err: any) {
+    if (err?.name === 'AbortError') {
+      throw new Error('Request timeout');
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeout);
   }
-  return res.json();
 }
 
 export const api = {
   // Auth
-  login: (data: LoginPayload) => request<AuthResponse>('/users/auth/login', { method: 'POST', body: JSON.stringify(data) }),
-  register: (data: LoginPayload & { name: string }) => request<AuthResponse>('/users', { method: 'POST', body: JSON.stringify(data) }),
+  login: async (data: LoginPayload) => {
+    const res = await request<any>('/users/auth/login', { method: 'POST', body: JSON.stringify(data) });
+    return normalizeAuthResponse(res);
+  },
+  register: async (data: LoginPayload & { name: string }) => {
+    const res = await request<any>('/users', { method: 'POST', body: JSON.stringify(data) });
+    if (res?.token || res?.user) {
+      return normalizeAuthResponse(res);
+    }
+    const loginRes = await request<any>('/users/auth/login', { method: 'POST', body: JSON.stringify({ email: data.email, password: data.password }) });
+    return normalizeAuthResponse(loginRes);
+  },
   getMe: () => request<User>('/users/auth/me'),
 
   // Campaigns
@@ -45,7 +67,12 @@ export const api = {
   getClasses: () => request<CharClass[]>('/classes'),
 
   // Messages
-  getMessages: (campaignId: string) => request<Message[]>(`/messages/campaign/${campaignId}`),
+  getMessages: async (campaignId: string) => {
+    const res = await request<any>(`/messages/campaign/${campaignId}`);
+    if (Array.isArray(res)) return res as Message[];
+    if (res && Array.isArray(res.messages)) return res.messages as Message[];
+    return [];
+  },
   sendMessage: (campaignId: string, content: string) =>
     request<Message>('/messages/crud', { method: 'POST', body: JSON.stringify({ campaignId, content }) }),
 
@@ -58,3 +85,19 @@ export const api = {
   createSession: (data: { campaignId: string; title?: string; scheduledFor?: string }) =>
     request<Session>('/sessions', { method: 'POST', body: JSON.stringify(data) }),
 };
+
+function normalizeAuthResponse(res: any): AuthResponse {
+  if (!res) {
+    throw new Error('Auth response inválida');
+  }
+  if (res.user && res.token) {
+    return { token: res.token, user: res.user };
+  }
+  if (res.id && res.email) {
+    return {
+      token: res.token,
+      user: { id: res.id, name: res.name, email: res.email },
+    };
+  }
+  throw new Error('Auth response inválida');
+}

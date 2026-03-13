@@ -55,7 +55,7 @@ export interface Character {
   isBot: boolean;
   botType?: string;
   avatarUrl?: string;
-  attributes: Record<string, number>;
+  attributes: Record<string, unknown>;
   isAlive: boolean;
   createdAt: string;
   updatedAt: string;
