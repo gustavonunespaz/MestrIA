@@ -1,0 +1,299 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============ ENUMS ============
+
+enum DmType {
+  AI
+  HUMAN
+}
+
+enum SenderRole {
+  USER
+  AI_DM
+  HUMAN_DM
+  SYSTEM
+}
+
+enum SessionStatus {
+  PLANNED
+  ACTIVE
+  FINISHED
+}
+
+// ============ MODELS ============
+
+model User {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  email     String   @unique
+  passwordHash String
+  createdAt DateTime @default(now()) @db.Timestamp(3)
+  updatedAt DateTime @updatedAt @db.Timestamp(3)
+
+  // Relations
+  campaigns       Campaign[]
+  campaignMembers CampaignMember[]
+  characters      Character[]
+  playerCharacters PlayerCharacter[]
+  messages        Message[]
+
+  @@map("PUBLIC_USER")
+}
+
+model Campaign {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String
+  description  String?
+  inviteCode   String?  @unique @db.Uuid
+  systemBase   String   // e.g., "D&D 5e", "Tormenta"
+  dmType       DmType
+  creatorId    String   @db.Uuid
+  createdAt    DateTime @default(now()) @db.Timestamp(3)
+  updatedAt    DateTime @updatedAt @db.Timestamp(3)
+
+  // Relations
+  creator          User                 @relation(fields: [creatorId], references: [id], onDelete: Restrict)
+  members          CampaignMember[]
+  characters       Character[]
+  messages         Message[]
+  sessions         Session[]
+  combatEncounters CombatEncounter[]
+  maps             Map[]
+  monsters         Monster[]
+  playerCharacters PlayerCharacter[]
+
+  @@map("PUBLIC_CAMPAIGN")
+}
+
+model CampaignMember {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  joinedAt   DateTime @default(now()) @db.Timestamp(3)
+  userId     String   @db.Uuid
+  campaignId String   @db.Uuid
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campaignId], name: "uk_user_campaign")
+  @@map("PUBLIC_CAMPAIGN_MEMBER")
+}
+
+model Character {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name       String
+  level      Int      @default(1)
+  hpCurrent  Int
+  hpMax      Int
+  isBot      Boolean  @default(false)
+  botType    String?
+  avatarUrl  String?
+  attributes Json     @default("{}")
+  isAlive    Boolean  @default(true)
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+  updatedAt  DateTime @updatedAt @db.Timestamp(3)
+  userId     String   @db.Uuid
+  campaignId String   @db.Uuid
+  raceId     String   @db.Uuid
+  classId    String   @db.Uuid
+
+  // Relations
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign       Campaign         @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  race           Race             @relation(fields: [raceId], references: [id], onDelete: Restrict)
+  class          Class            @relation(fields: [classId], references: [id], onDelete: Restrict)
+  items          CharacterItem[]
+  spells         CharacterSpell[]
+  monsters       Monster[]
+
+  @@map("PUBLIC_CHARACTER")
+}
+
+model Race {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  traits      Json     @default("{}")
+
+  // Relations
+  characters Character[]
+
+  @@map("PUBLIC_RACE")
+}
+
+model Class {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  hitDice     String
+  // hitDice example: "d8", "d10", etc.
+
+  // Relations
+  characters Character[]
+
+  @@map("PUBLIC_CLASS")
+}
+
+model CharacterItem {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  characterId String   @db.Uuid
+  itemId      String   @db.Uuid
+
+  // Relations
+  character Character       @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  item      ItemTemplate    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_CHARACTER_ITEM")
+}
+
+model CharacterSpell {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  characterId String   @db.Uuid
+  spellId     String   @db.Uuid
+
+  // Relations
+  character Character     @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  spell     SpellTemplate @relation(fields: [spellId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_CHARACTER_SPELL")
+}
+
+model ItemTemplate {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  type        String   // e.g., "weapon", "armor", "potion"
+  description String?
+  properties  Json     @default("{}")
+
+  // Relations
+  characters CharacterItem[]
+
+  @@map("PUBLIC_ITEM_TEMPLATE")
+}
+
+model SpellTemplate {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  level       Int
+  school      String?
+  castingTime String?
+  range       String?
+  duration    String?
+  description String?
+  damage      Json?
+
+  // Relations
+  characters CharacterSpell[]
+
+  @@map("PUBLIC_SPELL_TEMPLATE")
+}
+
+model MonsterTemplate {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name         String
+  challenge    Float
+  armorClass   Int
+  hitPoints    Int
+  stats        Json     @default("{}")
+  actions      Json     @default("{}")
+
+  // Relations
+  monsters Monster[]
+
+  @@map("PUBLIC_MONSTER_TEMPLATE")
+}
+
+model Monster {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name              String
+  characterId       String?  @db.Uuid
+  monsterTemplateId String   @db.Uuid
+  campaignId        String   @db.Uuid
+
+  // Relations
+  character Character?      @relation(fields: [characterId], references: [id], onDelete: SetNull)
+  template  MonsterTemplate @relation(fields: [monsterTemplateId], references: [id], onDelete: Restrict)
+  campaign  Campaign        @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_MONSTER")
+}
+
+model Message {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content    String
+  senderId   String   @db.Uuid
+  diceRoll   Json?
+  isWhisper  Boolean  @default(false)
+  senderRole SenderRole?
+  createdAt  DateTime @default(now()) @db.Timestamp(3)
+  campaignId String   @db.Uuid
+
+  // Relations
+  sender   User     @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_MESSAGE")
+}
+
+model Session {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String?
+  scheduledFor DateTime?    @db.Timestamp(3)
+  status      SessionStatus
+  summary     String?
+  createdAt   DateTime      @default(now()) @db.Timestamp(3)
+  campaignId  String        @db.Uuid
+
+  // Relations
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_SESSION")
+}
+
+model CombatEncounter {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  isActive    Boolean  @default(false)
+  round       Int      @default(1)
+  turnOrder   Json     @default("{}")
+  campaignId  String   @db.Uuid
+
+  // Relations
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_COMBAT_ENCOUNTER")
+}
+
+model Map {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  imageUrl    String
+  gridConfig  Json     @default("{}")
+  campaignId  String   @db.Uuid
+
+  // Relations
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_MAP")
+}
+
+model PlayerCharacter {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @db.Uuid
+  campaignId String   @db.Uuid
+
+  // Relations
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@map("PUBLIC_PLAYER_CHARACTER")
+}
