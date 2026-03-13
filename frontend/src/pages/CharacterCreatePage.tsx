@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/services/api';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,6 +44,7 @@ const CharacterCreatePage = () => {
   const { id: campaignId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -81,8 +83,23 @@ const CharacterCreatePage = () => {
     queryFn: api.getClasses,
   });
 
+  const { data: existingCharacters = [], isLoading: charactersLoading } = useQuery({
+    queryKey: ['characters', campaignId],
+    queryFn: () => api.getCharacters(campaignId!),
+    enabled: !!campaignId,
+  });
+
   const selectedRace = useMemo(() => races.find((r) => r.id === form.raceId), [races, form.raceId]);
   const selectedClass = useMemo(() => classes.find((c) => c.id === form.classId), [classes, form.classId]);
+
+  useEffect(() => {
+    if (!campaignId || charactersLoading) return;
+    if (!user?.id) return;
+    const hasCharacter = existingCharacters.some((char) => char.userId === user.id);
+    if (hasCharacter) {
+      navigate(`/campaign/${campaignId}`);
+    }
+  }, [campaignId, charactersLoading, existingCharacters, navigate, user]);
 
   const pointsUsed = Object.values(attributes).reduce((acc, val) => acc + (val - BASE_ATTR), 0);
   const pointsLeft = POOL - pointsUsed;

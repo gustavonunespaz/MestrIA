@@ -10,7 +10,8 @@ Este documento e o passo a passo completo para subir o ambiente local usando Doc
 ## Variaveis de ambiente
 
 O backend usa o arquivo `backend/.env`. Este repositorio ja possui um arquivo pronto.
-Se precisar recriar, use o modelo abaixo (o host do banco e o servico `postgres`):
+Se precisar recriar, use o modelo abaixo (o host do banco e o servico `postgres`).
+Importante: mantenha `GROQ_API_KEY` privado.
 
 ```env
 # Database
@@ -26,8 +27,8 @@ JWT_EXPIRATION=7d
 
 # AI Services
 GROQ_API_KEY=your-groq-api-key
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama2
+OLLAMA_URL=http://ollama:11434
+OLLAMA_MODEL=llama3.2:1b
 
 # Socket.io
 SOCKET_IO_CORS_ORIGIN=http://localhost:5173
@@ -35,19 +36,17 @@ SOCKET_IO_CORS_ORIGIN=http://localhost:5173
 
 ## Subir o ambiente
 
-1. Subir containers
+Subir tudo (backend, frontend, banco e IA):
 
 ```bash
 docker compose up -d
 ```
 
-2. Rodar migracoes do banco (primeira vez e quando o schema mudar)
+Observacoes:
+- Na primeira subida, o Ollama pode demorar para baixar o modelo.
+- As migracoes rodam automaticamente no startup da API.
 
-```bash
-docker compose exec api sh -c "cd backend && npx prisma migrate dev --name init --skip-seed"
-```
-
-3. (Opcional) Popular dados iniciais
+Opcional: popular dados iniciais
 
 ```bash
 docker compose exec api sh -c "cd backend && npm run seed"
@@ -79,4 +78,5 @@ docker compose down
   `docker compose logs --tail=200 api`
 - Se o banco estiver lento ou travado, reinicie o Postgres:
   `docker compose restart postgres`
-- Se o Prisma pedir nome de migracao, use `--name init`.
+- Se voce alterar o schema, rode manualmente:
+  `docker compose exec api sh -c "npx prisma migrate dev --name init --skip-seed"`

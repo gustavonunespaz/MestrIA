@@ -23,7 +23,7 @@ services:
   api:
     image: node:20
     container_name: mestria-api
-    working_dir: /app
+    working_dir: /app/backend
     ports:
       - "3000:3000"
     env_file:
@@ -31,16 +31,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
     networks:
       - mestria-network
     volumes:
       - .:/app
-    command: "npm run dev:backend"
+    command: "sh -c \"npx prisma migrate deploy && npm run dev\""
 
   frontend:
     image: node:20
     container_name: mestria-frontend
-    working_dir: /app
+    working_dir: /app/frontend
     ports:
       - "5173:5173"
     environment:
@@ -51,7 +53,7 @@ services:
       - mestria-network
     volumes:
       - .:/app
-    command: "sh -c \"cd /app/frontend && npm run dev -- --host 0.0.0.0 --port 5173\""
+    command: "npm run dev -- --host 0.0.0.0 --port 5173"
 
   ollama:
     image: ollama/ollama
@@ -64,11 +66,23 @@ services:
       - mestria-network
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
+      - OLLAMA_MODEL=llama3.2:1b
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
+      test: [ "CMD", "ollama", "list" ]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  ollama-init:
+    image: ollama/ollama
+    container_name: mestria-ollama-init
+    depends_on:
+      - ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    command: "until ollama list >/dev/null 2>&1; do sleep 1; done; ollama pull llama3.2:1b"
+    restart: "no"
 
 networks:
   mestria-network:

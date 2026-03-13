@@ -10,8 +10,9 @@ import CharacterSheet from '@/components/rpg/CharacterSheet';
 import DiceRoller from '@/components/rpg/DiceRoller';
 import { CreateCharacterDialog } from '@/components/CreateCharacterDialog';
 import { SessionList } from '@/components/SessionList';
+import { toast } from 'sonner';
 import {
-  ArrowLeft, Send, Users, ScrollText, Dices, MapIcon, Loader2, Sparkles, UserPlus,
+  ArrowLeft, Send, Users, ScrollText, Dices, MapIcon, Loader2, Sparkles,
 } from 'lucide-react';
 import type { Message, Character } from '@/types/models';
 
@@ -42,7 +43,7 @@ const CampaignPage = () => {
     refetchInterval: false,
   });
 
-  const { data: characters = [] } = useQuery({
+  const { data: characters = [], isLoading: charactersLoading } = useQuery({
     queryKey: ['characters', id],
     queryFn: () => api.getCharacters(id!),
     enabled: !!id,
@@ -70,6 +71,11 @@ const CampaignPage = () => {
     [characters, raceMap, classMap],
   );
 
+  const myCharacter = useMemo(
+    () => charactersWithRefs.find((char) => char.userId === user?.id) || null,
+    [charactersWithRefs, user],
+  );
+
   // Select first user character by default
   useEffect(() => {
     if (charactersWithRefs.length && !selectedCharacter) {
@@ -86,21 +92,32 @@ const CampaignPage = () => {
     }
   }, [charactersWithRefs, selectedCharacter]);
 
+  // Require character before playing
+  useEffect(() => {
+    if (!id || charactersLoading) return;
+    if (!user?.id) return;
+    if (!myCharacter) {
+      toast.message('Crie seu personagem antes de iniciar a aventura.');
+      navigate(`/campaign/${id}/character/create`);
+    }
+  }, [id, charactersLoading, myCharacter, navigate, user]);
+
   // Socket.IO real-time
   useEffect(() => {
     if (!id) return;
     const socket = getSocket();
-    socket.emit('joinCampaign', id);
+    if (user?.id) {
+      socket.emit('join-campaign', { campaignId: id, userId: user.id });
+    }
 
-    socket.on('newMessage', (msg: Message) => {
+    socket.on('new-message', (msg: Message) => {
       queryClient.setQueryData<Message[]>(['messages', id], (old) => [...(old || []), msg]);
     });
 
     return () => {
-      socket.emit('leaveCampaign', id);
-      socket.off('newMessage');
+      socket.off('new-message');
     };
-  }, [id, queryClient]);
+  }, [id, queryClient, user]);
 
   // Auto scroll
   useEffect(() => {
@@ -112,10 +129,21 @@ const CampaignPage = () => {
     if (!message.trim() || !id) return;
     setSending(true);
     try {
-      await api.sendMessage(id, message);
+      const userMessage = message.trim();
+      await api.sendMessage(id, userMessage, { senderRole: 'USER' });
       setMessage('');
+      await queryClient.invalidateQueries({ queryKey: ['messages', id] });
+
+      if (campaign?.dmType === 'AI') {
+        const ai = await api.generateAI(id, userMessage, { characterId: selectedCharacter?.id || null });
+        if (!ai?.content) {
+          throw new Error('IA nao retornou resposta');
+        }
+        await api.sendMessage(id, ai.content, { senderRole: 'AI_DM' });
+        await queryClient.invalidateQueries({ queryKey: ['messages', id] });
+      }
     } catch {
-      // handled by toast
+      toast.error('Falha ao enviar mensagem para a IA.');
     } finally {
       setSending(false);
     }

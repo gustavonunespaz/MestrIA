@@ -6,9 +6,9 @@ function getToken(): string | null {
   return localStorage.getItem('mestria_token');
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function request<T>(path: string, options: RequestInit = {}, timeoutMs: number = 8000): Promise<T> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 8000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const token = getToken();
   try {
     const res = await fetch(`${API_BASE}${path}`, {
@@ -73,12 +73,32 @@ export const api = {
     if (res && Array.isArray(res.messages)) return res.messages as Message[];
     return [];
   },
-  sendMessage: (campaignId: string, content: string) =>
-    request<Message>('/messages/crud', { method: 'POST', body: JSON.stringify({ campaignId, content }) }),
+  sendMessage: (
+    campaignId: string,
+    content: string,
+    options?: { senderRole?: string; diceRoll?: unknown; isWhisper?: boolean },
+  ) =>
+    request<Message>('/messages/crud', {
+      method: 'POST',
+      body: JSON.stringify({ campaignId, content, ...options }),
+    }),
 
   // AI
-  generateAI: (campaignId: string, prompt: string) =>
-    request<{ response: string }>('/ai/generate', { method: 'POST', body: JSON.stringify({ campaignId, message: prompt }) }),
+  generateAI: async (
+    campaignId: string,
+    prompt: string,
+    options?: { characterId?: string | null; type?: string | null },
+  ) => {
+    const res = await request<any>('/ai/generate', {
+      method: 'POST',
+      body: JSON.stringify({ campaignId, message: prompt, ...options }),
+    }, 60000);
+    return {
+      content: res?.content || res?.response || '',
+      model: res?.model,
+      source: res?.source,
+    };
+  },
 
   // Sessions
   getSessions: (campaignId: string) => request<Session[]>(`/sessions/campaign/${campaignId}`),
