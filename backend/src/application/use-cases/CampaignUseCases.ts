@@ -25,7 +25,7 @@ export class CreateCampaignUseCase {
     }
 
     // Gerar código de convite
-    const inviteCode = StringUtils.generateId().substring(0, 8).toUpperCase();
+    const inviteCode = StringUtils.generateId();
 
     // Criar entidade
     const campaign = new Campaign({

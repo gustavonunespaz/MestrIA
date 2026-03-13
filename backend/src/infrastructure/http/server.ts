@@ -32,8 +32,13 @@ export function createServer(): express.Application & { io?: Server } {
   app.use(express.urlencoded({ extended: true }));
 
   // Health check route
-  app.get('/health', (req: express.Request, res: express.Response) => {
+  app.get('/api/health', (req: express.Request, res: express.Response) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+  });
+
+  // Root route for direct browser checks
+  app.get('/', (req: express.Request, res: express.Response) => {
+    res.send('<h1>MestrIA Backend Engine</h1><p>API is running normally.</p>');
   });
 
   // Socket.io Chat Service

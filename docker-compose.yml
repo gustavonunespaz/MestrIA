@@ -6,7 +6,7 @@ services:
     container_name: mestria-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: tdvlkw1!
+      POSTGRES_PASSWORD: Tdvlkw1!
       POSTGRES_DB: mestria
     ports:
       - "5433:5432"
@@ -15,20 +15,19 @@ services:
     networks:
       - mestria-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
   api:
-    build: .
+    image: node:20
     container_name: mestria-api
+    working_dir: /app
     ports:
       - "3000:3000"
-    environment:
-      DATABASE_URL: "postgresql://postgres:tdvlkw1!@postgres:5432/mestria"
-      NODE_ENV: development
-      PORT: 3000
+    env_file:
+      - ./backend/.env
     depends_on:
       postgres:
         condition: service_healthy
@@ -36,7 +35,23 @@ services:
       - mestria-network
     volumes:
       - .:/app
-      - /app/node_modules
+    command: "npm run dev:backend"
+
+  frontend:
+    image: node:20
+    container_name: mestria-frontend
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_URL: "http://localhost:3000/api"
+    depends_on:
+      - api
+    networks:
+      - mestria-network
+    volumes:
+      - .:/app
+    command: "npm run dev:frontend -- --host"
 
   ollama:
     image: ollama/ollama
@@ -50,7 +65,7 @@ services:
     environment:
       - OLLAMA_HOST=0.0.0.0:11434
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      test: [ "CMD", "curl", "-f", "http://localhost:11434/api/tags" ]
       interval: 10s
       timeout: 5s
       retries: 5
