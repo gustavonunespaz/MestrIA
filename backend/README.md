@@ -1,63 +1,86 @@
-# MestrIA
+# 🧙 MestrIA
 
-Plataforma web de RPG de mesa com backend em Node.js/TypeScript, banco PostgreSQL via Prisma e arquitetura para integração com LLMs (IA como Mestre de Jogo).
+Plataforma web de RPG de mesa com backend Node.js/TypeScript, banco PostgreSQL via Prisma e integração com LLMs (IA como Mestre de Jogo).
 
-## Status atual
+---
 
-- Schema final do banco aplicado em `prisma/schema.prisma`:
-  - `PUBLIC_RACE`, `PUBLIC_CLASS`, `PUBLIC_ITEM_TEMPLATE`, `PUBLIC_SPELL_TEMPLATE`,
-    `PUBLIC_MONSTER_TEMPLATE`, `PUBLIC_MONSTER`, `PUBLIC_SESSION`, `PUBLIC_MESSAGE`,
-    `PUBLIC_COMBAT_ENCOUNTER`, `PUBLIC_MAP`, `PUBLIC_CAMPAIGN_MEMBER`,
-    `PUBLIC_PLAYER_CHARACTER`, `PUBLIC_CHARACTER_ITEM`, `PUBLIC_CHARACTER_SPELL`.
-- Enumes migrados: `DmType`, `SenderRole`, `SessionStatus`.
-- Entidades e repositórios injetáveis criados em `src/domain` + `src/infrastructure/prisma`.
-- Build TypeScript validado sem erros usando `npm run build`.
-- Markdown de documentação movido para `docs/`.
+## Stack
 
-## Estrutura principal
+| Camada     | Tecnologia                        |
+|------------|-----------------------------------|
+| Frontend   | Vite + React + TypeScript         |
+| Backend    | Node.js + Express + TypeScript    |
+| Banco      | PostgreSQL 16 via Prisma ORM      |
+| IA local   | Ollama                            |
+| IA na nuvem| Groq API                          |
+| Infra      | Docker Compose + WSL 2            |
 
-- `src/domain/entities`: modelos de domínio.
-- `src/domain/repositories`: contratos de repositório (interfaces).
-- `src/infrastructure/prisma/repositories`: implementação de repositories usando Prisma.
-- `src/infrastructure/http/server.ts`: servidor API (Express/Fastify) já integrado.
-- `prisma/schema.prisma`: definição de dados e migrações.
-- `seed.ts`: seed inicial de dados.
-- `docs/`: documentos de arquitetura, backlog e status.
+---
 
-## Como rodar
+## Setup
 
-1. Instalar dependências:
-   - `npm install`
-2. Ajustar `.env` (PostgreSQL e API keys caso use Groq/Ollama).
-3. Rodar migrações:
-   - `npx prisma migrate dev --name init`
-4. Seed:
-   - `npm run seed`
-5. Iniciar:
-   - `npm run dev`
+Consulte o **[guia completo de setup](docs/SETUP.md)** para instruções detalhadas.
 
-## Pipelines e comandos úteis
+### Resumo rápido
 
-- Compilar: `npm run build`
-- Testes: `npm test` (se presente)
-- Lint: `npm run lint`
-- Prisma Studio: `npx prisma studio`
+```bash
+# 1. Instalar dependências
+npm install
 
-## Documentação
+# 2. Configurar variáveis de ambiente
+cp backend/.env.example backend/.env
+# Edite backend/.env conforme necessário
 
-- `docs/01-architecture.md`
-- `docs/02-prisma-schema.md`
-- `docs/03-phase-status.md`
-- `docs/04-post-merge-checklist.md`
+# 3. Subir os containers
+docker compose up -d
 
-## Próximos passos (recomendados)
+# 4. Rodar migrações
+docker compose exec api npx prisma migrate dev
+```
 
-- Implementar casos de uso (use-cases / services) para as novas entidades.
-- Criar controladores/rotas REST para `Session`, `Message`, `PlayerCharacter` etc.
-- Integrar Socket.IO para troca em tempo real de mensagens e estado da campanha.
-- Adicionar testes unitários e de integração para repositórios e controllers.
+### Serviços disponíveis
+
+| Serviço    | URL                     |
+|------------|-------------------------|
+| Frontend   | http://localhost:5173   |
+| API        | http://localhost:3000   |
+| Ollama     | http://localhost:11434  |
+
+---
+
+## Estrutura do projeto
+
+```
+MestrIA/
+├── backend/          # API Node.js + Prisma
+│   ├── src/
+│   │   ├── domain/          # Entidades e interfaces de repositório
+│   │   ├── infrastructure/  # Implementações Prisma + servidor HTTP
+│   │   └── application/     # Use cases / services
+│   └── prisma/              # Schema e migrações
+├── frontend/         # Vite + React
+├── docs/             # Documentação
+└── docker-compose.yml
+```
+
+---
+
+## Comandos úteis
+
+```bash
+# Derrubar containers
+docker compose down
+
+# Logs em tempo real
+docker compose logs -f
+
+# Prisma Studio (visualizador do banco)
+docker compose exec api npx prisma studio
+
+# Seed de dados iniciais
+docker compose exec api npm run seed
+```
 
 ---
 
 Made with ❤️ e LLM-friendly architecture.
-****
