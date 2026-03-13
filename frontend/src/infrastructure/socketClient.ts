@@ -35,14 +35,14 @@ class SocketClient {
     }
   }
 
-  on(event: string, fn: (...args: any[]) => void) {
+  on(event: string, fn: (...args: unknown[]) => void) {
     if (!this.socket) {
       this.connect();
     }
     this.socket?.on(event, fn);
   }
 
-  off(event: string, fn?: (...args: any[]) => void) {
+  off(event: string, fn?: (...args: unknown[]) => void) {
     this.socket?.off(event, fn);
   }
 

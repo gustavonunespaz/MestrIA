@@ -6,7 +6,7 @@ services:
     container_name: mestria-db
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: Tdvlkw1!
+      POSTGRES_PASSWORD: mestria
       POSTGRES_DB: mestria
     ports:
       - "5433:5432"

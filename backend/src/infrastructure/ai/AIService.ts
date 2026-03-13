@@ -14,7 +14,7 @@ export class AIService {
   private ollamaBreaker: CircuitBreaker;
 
   private groqApiKey: string;
-  private groqModel: string = 'mixtral-8x7b-32768';
+  private groqModel: string = 'llama-3.1-8b-instant';
   private groqApiUrl: string = 'https://api.groq.com/openai/v1/chat/completions';
 
   private ollamaUrl: string;
@@ -23,7 +23,7 @@ export class AIService {
   constructor() {
     this.groqApiKey = process.env.GROQ_API_KEY || '';
     this.ollamaUrl = process.env.OLLAMA_URL || 'http://localhost:11434';
-    this.ollamaModel = process.env.OLLAMA_MODEL || 'llama2';
+    this.ollamaModel = process.env.OLLAMA_MODEL || 'llama3.2:1b';
 
     this.groqBreaker = new CircuitBreaker(3, 2, 60000);
     this.ollamaBreaker = new CircuitBreaker(3, 2, 30000);
@@ -50,8 +50,8 @@ export class AIService {
   }
 
   private async callGroq(context: PromptContext): Promise<AIResponse> {
-    if (!this.groqApiKey) {
-      throw new Error('GROQ_API_KEY not configured');
+    if (!this.groqApiKey || this.groqApiKey === 'your-groq-api-key') {
+      throw new Error('GROQ_API_KEY not configured or is still a placeholder');
     }
 
     console.log('[Groq] Sending request...');
@@ -68,70 +68,86 @@ export class AIService {
       },
     ];
 
-    const response = await axios.post(
-      this.groqApiUrl,
-      {
-        model: this.groqModel,
-        messages,
-        temperature: 0.8,
-        max_tokens: 1024,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${this.groqApiKey}`,
-          'Content-Type': 'application/json',
+    try {
+      const response = await axios.post(
+        this.groqApiUrl,
+        {
+          model: this.groqModel,
+          messages,
+          temperature: 0.8,
+          max_tokens: 1024,
         },
-        timeout: 30000,
-      },
-    );
+        {
+          headers: {
+            Authorization: `Bearer ${this.groqApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 30000,
+        },
+      );
 
-    const content = response.data.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('Empty response from Groq');
+      const content = response.data.choices[0]?.message?.content;
+      if (!content) {
+        throw new Error('Empty response from Groq');
+      }
+
+      console.log('[Groq] Response received successfully');
+
+      return {
+        content,
+        model: this.groqModel,
+        source: 'groq',
+        tokensUsed: response.data.usage?.total_tokens,
+        timestamp: new Date(),
+      };
+    } catch (error: any) {
+      console.error('[Groq API Error]', error.response?.data || error.message);
+      throw error;
     }
-
-    console.log('[Groq] Response received successfully');
-
-    return {
-      content,
-      model: this.groqModel,
-      source: 'groq',
-      tokensUsed: response.data.usage?.total_tokens,
-      timestamp: new Date(),
-    };
   }
 
   private async callOllama(context: PromptContext): Promise<AIResponse> {
-    console.log('[Ollama] Sending request...');
+    console.log('[Ollama] Sending request to:', this.ollamaUrl);
 
-    const systemPrompt = `${context.systemMessage}\n\nCampaign Context: ${JSON.stringify(context.campaignContext || {})}\n\nCharacter Context: ${JSON.stringify(context.characterContext || {})}`;
+    const systemPrompt = `${context.systemMessage}\n\nContexto da Campanha: ${JSON.stringify(context.campaignContext || {})}`;
 
-    const response = await axios.post(
-      `${this.ollamaUrl}/api/generate`,
-      {
+    try {
+      const response = await axios.post(
+        `${this.ollamaUrl}/api/generate`,
+        {
+          model: this.ollamaModel,
+          prompt: `${systemPrompt}\n\nUsuário: ${context.userMessage}\n\nOráculo:`,
+          stream: false,
+          temperature: 0.8,
+        },
+        {
+          timeout: 120000,
+        },
+      );
+
+      const content = response.data.response?.trim();
+      if (!content) {
+        throw new Error('Empty response from Ollama');
+      }
+
+      console.log('[Ollama] Response received successfully');
+
+      return {
+        content,
         model: this.ollamaModel,
-        prompt: `${systemPrompt}\n\nUser: ${context.userMessage}\n\nAssistant:`,
-        stream: false,
-        temperature: 0.8,
-      },
-      {
-        timeout: 120000,
-      },
-    );
-
-    const content = response.data.response?.trim();
-    if (!content) {
-      throw new Error('Empty response from Ollama');
+        source: 'ollama',
+        timestamp: new Date(),
+      };
+    } catch (error: any) {
+      console.error('[Ollama API Error]', error.message);
+      if (error.response) {
+        console.error('[Ollama Error Response]', error.response.data);
+      }
+      if (error.code === 'ECONNREFUSED') {
+        console.error(`[Ollama] Verifique se o serviço está rodando em ${this.ollamaUrl}`);
+      }
+      throw error;
     }
-
-    console.log('[Ollama] Response received successfully');
-
-    return {
-      content,
-      model: this.ollamaModel,
-      source: 'ollama',
-      timestamp: new Date(),
-    };
   }
 
   async generateNarrative(campaignDetails: string): Promise<AIResponse> {
