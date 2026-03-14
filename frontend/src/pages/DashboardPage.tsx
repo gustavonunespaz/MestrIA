@@ -3,12 +3,22 @@ import { api } from '@/services/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, ScrollText, LogOut, Plus } from 'lucide-react';
+import { Users, ScrollText, LogOut, User, Settings } from 'lucide-react';
 import { CreateCampaignDialog } from '@/components/CreateCampaignDialog';
+import { JoinCampaignDialog } from '@/components/JoinCampaignDialog';
+import { DeleteCampaignDialog } from '@/components/DeleteCampaignDialog';
 import type { Campaign } from '@/types/models';
 import mestriaLogo from '@/assets/mestria-logo.svg';
 
-const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }) => {
+const CampaignCard = ({
+  campaign,
+  index,
+  canDelete,
+}: {
+  campaign: Campaign;
+  index: number;
+  canDelete: boolean;
+}) => {
   const navigate = useNavigate();
 
   return (
@@ -27,6 +37,9 @@ const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }
           <h3 className="truncate font-display text-lg font-bold text-foreground">{campaign.title}</h3>
           <span className="text-xs text-accent">{campaign.systemBase}</span>
         </div>
+        {canDelete && (
+          <DeleteCampaignDialog campaignId={campaign.id} campaignTitle={campaign.title} />
+        )}
       </div>
       {campaign.description && (
         <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">{campaign.description}</p>
@@ -34,7 +47,7 @@ const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Users className="h-3.5 w-3.5" />
-          {campaign._count?.members ?? campaign.members?.length ?? 0} membros
+          {campaign.membersCount ?? campaign._count?.members ?? campaign.members?.length ?? 0} membros
         </span>
         <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-foreground">
           {campaign.dmType === 'AI' ? '🤖 IA Mestre' : '👤 Mestre Humano'}
@@ -46,6 +59,7 @@ const CampaignCard = ({ campaign, index }: { campaign: Campaign; index: number }
 
 const DashboardPage = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { data: campaigns, isLoading } = useQuery({
     queryKey: ['campaigns'],
     queryFn: api.getCampaigns,
@@ -61,6 +75,20 @@ const DashboardPage = () => {
         </div>
         <div className="flex items-center gap-4">
           <span className="text-sm text-muted-foreground">Olá, {user?.name}</span>
+          <button
+            onClick={() => navigate('/account')}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Perfil"
+          >
+            <User className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => navigate('/settings')}
+            className="text-muted-foreground transition-colors hover:text-foreground"
+            aria-label="Configuracoes"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
           <button onClick={logout} className="text-muted-foreground transition-colors hover:text-foreground">
             <LogOut className="h-5 w-5" />
           </button>
@@ -74,7 +102,10 @@ const DashboardPage = () => {
             <h2 className="font-display text-3xl font-bold text-foreground">Suas Campanhas</h2>
             <p className="mt-1 text-sm text-muted-foreground">Escolha uma aventura para continuar</p>
           </div>
-          <CreateCampaignDialog />
+          <div className="flex flex-wrap gap-3">
+            <JoinCampaignDialog />
+            <CreateCampaignDialog />
+          </div>
         </div>
 
         {isLoading ? (
@@ -86,7 +117,7 @@ const DashboardPage = () => {
         ) : campaigns && campaigns.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {campaigns.map((c, i) => (
-              <CampaignCard key={c.id} campaign={c} index={i} />
+              <CampaignCard key={c.id} campaign={c} index={i} canDelete={c.creatorId === user?.id} />
             ))}
           </div>
         ) : (

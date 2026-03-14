@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { CreateUserUseCase, GetUserByIdUseCase, LoginUseCase } from '@application/use-cases/UserUseCases';
-import { CreateUserDTO, LoginDTO } from '@application/dto/UserDTO';
+import { CreateUserUseCase, GetUserByIdUseCase, LoginUseCase, UpdateUserUseCase } from '@application/use-cases/UserUseCases';
+import { CreateUserDTO, LoginDTO, UpdateUserDTO } from '@application/dto/UserDTO';
 import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { AppError } from '@shared/errors/AppError';
 import { AuthRequest } from '@presentation/middlewares/authMiddleware';
@@ -10,11 +10,13 @@ export class UserController {
   private createUserUseCase: CreateUserUseCase;
   private getUserByIdUseCase: GetUserByIdUseCase;
   private loginUseCase: LoginUseCase;
+  private updateUserUseCase: UpdateUserUseCase;
 
   constructor(userRepository: IUserRepository) {
     this.createUserUseCase = new CreateUserUseCase(userRepository);
     this.getUserByIdUseCase = new GetUserByIdUseCase(userRepository);
     this.loginUseCase = new LoginUseCase(userRepository);
+    this.updateUserUseCase = new UpdateUserUseCase(userRepository);
   }
 
   async create(req: Request, res: Response): Promise<void> {
@@ -85,6 +87,29 @@ export class UserController {
       }
 
       const result = await this.getUserByIdUseCase.execute(userId);
+
+      res.json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        res.status(error.statusCode).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    }
+  }
+
+  async updateMe(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const userId = req.userId;
+
+      if (!userId) {
+        throw new AppError('Não autorizado', 401);
+      }
+
+      const { name } = req.body;
+      const dto = new UpdateUserDTO({ name });
+
+      const result = await this.updateUserUseCase.execute(userId, dto);
 
       res.json(result);
     } catch (error) {

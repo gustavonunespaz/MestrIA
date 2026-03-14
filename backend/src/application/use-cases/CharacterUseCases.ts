@@ -30,6 +30,7 @@ export class CreateCharacterUseCase {
       hpMax: dto.hpMax,
       isBot: dto['isBot'] || false,
       botType: dto['botType'],
+      avatarUrl: dto['avatarUrl'],
       userId,
       campaignId: dto.campaignId,
       raceId: dto.raceId,
@@ -50,6 +51,7 @@ export class CreateCharacterUseCase {
       hpMax: created.hpMax,
       isBot: created.isBot,
       botType: created.botType,
+      avatarUrl: created.avatarUrl,
       userId: created.userId,
       campaignId: created.campaignId,
       raceId: created.raceId,
@@ -79,6 +81,7 @@ export class GetCharacterByIdUseCase {
       hpMax: character.hpMax,
       isBot: character.isBot,
       botType: character.botType,
+      avatarUrl: character.avatarUrl,
       userId: character.userId,
       campaignId: character.campaignId,
       raceId: character.raceId,
@@ -105,6 +108,7 @@ export class UpdateCharacterUseCase {
     if (dto.level) character.level = dto.level;
     if (dto.hpCurrent !== undefined) character.hpCurrent = dto.hpCurrent;
     if (dto.hpMax) character.hpMax = dto.hpMax;
+    if (dto.avatarUrl !== undefined) character.avatarUrl = dto.avatarUrl;
     if (dto.attributes) {
       character.attributes = {
         ...character.attributes,
@@ -123,6 +127,7 @@ export class UpdateCharacterUseCase {
       hpMax: updated.hpMax,
       isBot: updated.isBot,
       botType: updated.botType,
+      avatarUrl: updated.avatarUrl,
       userId: updated.userId,
       campaignId: updated.campaignId,
       raceId: updated.raceId,
@@ -164,6 +169,7 @@ export class ListCharactersByCampaignUseCase {
           hpMax: character.hpMax,
           isBot: character.isBot,
           botType: character.botType,
+          avatarUrl: character.avatarUrl,
           userId: character.userId,
           campaignId: character.campaignId,
           raceId: character.raceId,
@@ -192,6 +198,7 @@ export class ListCharactersByUserUseCase {
           hpMax: character.hpMax,
           isBot: character.isBot,
           botType: character.botType,
+          avatarUrl: character.avatarUrl,
           userId: character.userId,
           campaignId: character.campaignId,
           raceId: character.raceId,

@@ -6,7 +6,7 @@ import {
   CampaignResponseDTO,
 } from '@application/dto/CampaignDTO';
 import { StringUtils, DateUtils } from '@shared/utils';
-import { ValidationError, NotFoundError } from '@shared/errors/AppError';
+import { ValidationError, NotFoundError, ForbiddenError } from '@shared/errors/AppError';
 
 export class CreateCampaignUseCase {
   constructor(private campaignRepository: ICampaignRepository) {}
@@ -20,7 +20,7 @@ export class CreateCampaignUseCase {
       throw new ValidationError('O título deve ter pelo menos 3 caracteres');
     }
 
-    if (!dto.description || dto.description.length < 10) {
+    if (dto.description && dto.description.length < 10) {
       throw new ValidationError('A descrição deve ter pelo menos 10 caracteres');
     }
 
@@ -51,6 +51,7 @@ export class CreateCampaignUseCase {
       dmType: created.dmType,
       creatorId: created.creatorId,
       inviteCode: created.inviteCode,
+      membersCount: created.membersCount,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
     });
@@ -75,6 +76,7 @@ export class GetCampaignByIdUseCase {
       dmType: campaign.dmType,
       creatorId: campaign.creatorId,
       inviteCode: campaign.inviteCode,
+      membersCount: campaign.membersCount,
       createdAt: campaign.createdAt,
       updatedAt: campaign.updatedAt,
     });
@@ -107,6 +109,7 @@ export class UpdateCampaignUseCase {
       dmType: updated.dmType,
       creatorId: updated.creatorId,
       inviteCode: updated.inviteCode,
+      membersCount: updated.membersCount,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     });
@@ -116,22 +119,26 @@ export class UpdateCampaignUseCase {
 export class DeleteCampaignUseCase {
   constructor(private campaignRepository: ICampaignRepository) {}
 
-  async execute(id: string): Promise<void> {
+  async execute(id: string, userId: string): Promise<void> {
     const campaign = await this.campaignRepository.findById(id);
 
     if (!campaign) {
       throw new NotFoundError('Campanha');
     }
 
+    if (campaign.creatorId !== userId) {
+      throw new ForbiddenError('Apenas o criador pode apagar a campanha');
+    }
+
     await this.campaignRepository.delete(id);
   }
 }
 
-export class ListCampaignsByCreatorUseCase {
+export class ListCampaignsByUserUseCase {
   constructor(private campaignRepository: ICampaignRepository) {}
 
-  async execute(creatorId: string): Promise<CampaignResponseDTO[]> {
-    const campaigns = await this.campaignRepository.findByCreatorId(creatorId);
+  async execute(userId: string): Promise<CampaignResponseDTO[]> {
+    const campaigns = await this.campaignRepository.findByUserId(userId);
 
     return campaigns.map(
       (campaign) =>
@@ -143,9 +150,44 @@ export class ListCampaignsByCreatorUseCase {
           dmType: campaign.dmType,
           creatorId: campaign.creatorId,
           inviteCode: campaign.inviteCode,
+          membersCount: campaign.membersCount,
           createdAt: campaign.createdAt,
           updatedAt: campaign.updatedAt,
         }),
     );
+  }
+}
+
+export class JoinCampaignByCodeUseCase {
+  constructor(private campaignRepository: ICampaignRepository) {}
+
+  async execute(userId: string, inviteCode: string): Promise<CampaignResponseDTO> {
+    if (!inviteCode || inviteCode.trim().length < 6) {
+      throw new ValidationError('Código de convite inválido');
+    }
+
+    const campaign = await this.campaignRepository.findByCampaignCode(inviteCode.trim());
+
+    if (!campaign) {
+      throw new NotFoundError('Campanha');
+    }
+
+    await this.campaignRepository.addMember(campaign.id, userId);
+
+    const updated = await this.campaignRepository.findById(campaign.id);
+    const result = updated || campaign;
+
+    return new CampaignResponseDTO({
+      id: result.id,
+      title: result.title,
+      description: result.description,
+      systemBase: result.systemBase,
+      dmType: result.dmType,
+      creatorId: result.creatorId,
+      inviteCode: result.inviteCode,
+      membersCount: result.membersCount,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+    });
   }
 }

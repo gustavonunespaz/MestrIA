@@ -21,12 +21,24 @@ export class Map {
     return this.props.name;
   }
 
+  set name(value: string) {
+    this.props.name = value;
+  }
+
   get imageUrl(): string {
     return this.props.imageUrl;
   }
 
+  set imageUrl(value: string) {
+    this.props.imageUrl = value;
+  }
+
   get gridConfig(): Record<string, any> {
     return this.props.gridConfig;
+  }
+
+  set gridConfig(value: Record<string, any>) {
+    this.props.gridConfig = value;
   }
 
   get campaignId(): string {

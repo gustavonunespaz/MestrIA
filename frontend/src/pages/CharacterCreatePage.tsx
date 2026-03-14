@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STEPS = ['Identidade', 'Personalidade', 'Atributos', 'Historia', 'Resumo'];
@@ -54,6 +55,7 @@ const CharacterCreatePage = () => {
     raceId: '',
     classId: '',
     level: 1,
+    avatarUrl: '',
     archetype: '',
     personality: '',
     behavior: '',
@@ -153,6 +155,7 @@ const CharacterCreatePage = () => {
         hpCurrent: hpMax,
         hpMax,
         isBot: false,
+        avatarUrl: form.avatarUrl?.trim() || undefined,
         attributes: {
           ...attributes,
           profile: {
@@ -183,6 +186,12 @@ const CharacterCreatePage = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-4xl px-6 py-8">
+        <div className="mb-4">
+          <Button variant="ghost" onClick={() => navigate('/')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Voltar para inicio
+          </Button>
+        </div>
         <div className="mb-6">
           <h1 className="font-display text-3xl font-bold text-foreground">Criar Personagem</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -207,6 +216,15 @@ const CharacterCreatePage = () => {
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Ex: Valerius"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Avatar (URL opcional)</Label>
+                <Input
+                  value={form.avatarUrl}
+                  onChange={(e) => setForm({ ...form, avatarUrl: e.target.value })}
+                  placeholder="https://..."
                 />
               </div>
 

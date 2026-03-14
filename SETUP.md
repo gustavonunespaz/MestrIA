@@ -45,12 +45,32 @@ docker compose up -d
 Observacoes:
 - Na primeira subida, o Ollama pode demorar para baixar o modelo.
 - As migracoes rodam automaticamente no startup da API.
+- O frontend so sobe depois da API ficar saudavel (healthcheck).
 
 Opcional: popular dados iniciais
 
 ```bash
-docker compose exec api sh -c "cd backend && npm run seed"
+docker compose exec api npm run seed
 ```
+
+Observacao:
+- O seed nao cria usuarios. Se voce ainda nao tiver usuarios, crie pelo frontend primeiro.
+
+## Verificar a IA (Groq e Ollama)
+
+Depois de subir o docker, confirme se as duas IAs respondem:
+
+```bash
+docker compose exec api npm run ai:health
+```
+
+Ou via endpoint:
+
+```bash
+curl http://localhost:3000/api/ai/health
+```
+
+Se alguma falhar, a API retorna o erro e a latencia de cada servico.
 
 ## Acessos
 
@@ -58,6 +78,19 @@ docker compose exec api sh -c "cd backend && npm run seed"
 - API: http://localhost:3000
 - Ollama: http://localhost:11434
 - Postgres (host): localhost:5433 (usuario `postgres`, senha `mestria`)
+
+## DBeaver (conectar no banco)
+
+Depois de subir o docker, configure uma nova conexao no DBeaver:
+
+- Driver: PostgreSQL
+- Host: `localhost`
+- Porta: `5433`
+- Banco: `mestria`
+- Usuario: `postgres`
+- Senha: `mestria`
+
+Teste a conexao e clique em **Conectar**. As tabelas ficam no schema `public`.
 
 ## Comandos uteis
 

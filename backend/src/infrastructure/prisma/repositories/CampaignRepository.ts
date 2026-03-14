@@ -6,6 +6,7 @@ export class CampaignRepository implements ICampaignRepository {
   async findById(id: string): Promise<Campaign | null> {
     const campaign = await prisma.campaign.findUnique({
       where: { id },
+      include: { _count: { select: { members: true } } },
     });
 
     if (!campaign) {
@@ -20,6 +21,7 @@ export class CampaignRepository implements ICampaignRepository {
       dmType: campaign.dmType as 'AI' | 'HUMAN',
       creatorId: campaign.creatorId,
       inviteCode: campaign.inviteCode,
+      membersCount: campaign._count?.members ?? 0,
       createdAt: campaign.createdAt,
       updatedAt: campaign.updatedAt,
     });
@@ -28,6 +30,7 @@ export class CampaignRepository implements ICampaignRepository {
   async findByCampaignCode(inviteCode: string): Promise<Campaign | null> {
     const campaign = await prisma.campaign.findUnique({
       where: { inviteCode },
+      include: { _count: { select: { members: true } } },
     });
 
     if (!campaign) {
@@ -42,6 +45,7 @@ export class CampaignRepository implements ICampaignRepository {
       dmType: campaign.dmType as 'AI' | 'HUMAN',
       creatorId: campaign.creatorId,
       inviteCode: campaign.inviteCode,
+      membersCount: campaign._count?.members ?? 0,
       createdAt: campaign.createdAt,
       updatedAt: campaign.updatedAt,
     });
@@ -57,7 +61,13 @@ export class CampaignRepository implements ICampaignRepository {
         dmType: campaign.dmType,
         creatorId: campaign.creatorId,
         inviteCode: campaign.inviteCode,
+        members: {
+          create: {
+            userId: campaign.creatorId,
+          },
+        },
       },
+      include: { _count: { select: { members: true } } },
     });
 
     return new Campaign({
@@ -68,6 +78,7 @@ export class CampaignRepository implements ICampaignRepository {
       dmType: created.dmType as 'AI' | 'HUMAN',
       creatorId: created.creatorId,
       inviteCode: created.inviteCode,
+      membersCount: created._count?.members ?? 0,
       createdAt: created.createdAt,
       updatedAt: created.updatedAt,
     });
@@ -81,6 +92,7 @@ export class CampaignRepository implements ICampaignRepository {
         description: campaign.description,
         systemBase: campaign.systemBase,
       },
+      include: { _count: { select: { members: true } } },
     });
 
     return new Campaign({
@@ -91,6 +103,7 @@ export class CampaignRepository implements ICampaignRepository {
       dmType: updated.dmType as 'AI' | 'HUMAN',
       creatorId: updated.creatorId,
       inviteCode: updated.inviteCode,
+      membersCount: updated._count?.members ?? 0,
       createdAt: updated.createdAt,
       updatedAt: updated.updatedAt,
     });
@@ -106,6 +119,7 @@ export class CampaignRepository implements ICampaignRepository {
   async findByCreatorId(creatorId: string): Promise<Campaign[]> {
     const campaigns = await prisma.campaign.findMany({
       where: { creatorId },
+      include: { _count: { select: { members: true } } },
     });
 
     return campaigns.map(
@@ -118,9 +132,46 @@ export class CampaignRepository implements ICampaignRepository {
           dmType: campaign.dmType as 'AI' | 'HUMAN',
           creatorId: campaign.creatorId,
           inviteCode: campaign.inviteCode,
+          membersCount: campaign._count?.members ?? 0,
           createdAt: campaign.createdAt,
           updatedAt: campaign.updatedAt,
         }),
     );
+  }
+
+  async findByUserId(userId: string): Promise<Campaign[]> {
+    const campaigns = await prisma.campaign.findMany({
+      where: {
+        OR: [
+          { creatorId: userId },
+          { members: { some: { userId } } },
+        ],
+      },
+      include: { _count: { select: { members: true } } },
+    });
+
+    return campaigns.map(
+      (campaign: any) =>
+        new Campaign({
+          id: campaign.id,
+          title: campaign.title,
+          description: campaign.description,
+          systemBase: campaign.systemBase,
+          dmType: campaign.dmType as 'AI' | 'HUMAN',
+          creatorId: campaign.creatorId,
+          inviteCode: campaign.inviteCode,
+          membersCount: campaign._count?.members ?? 0,
+          createdAt: campaign.createdAt,
+          updatedAt: campaign.updatedAt,
+        }),
+    );
+  }
+
+  async addMember(campaignId: string, userId: string): Promise<void> {
+    await prisma.campaignMember.upsert({
+      where: { userId_campaignId: { userId, campaignId } },
+      create: { userId, campaignId },
+      update: {},
+    });
   }
 }

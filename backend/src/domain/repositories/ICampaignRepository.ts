@@ -7,4 +7,6 @@ export interface ICampaignRepository {
   update(campaign: Campaign): Promise<Campaign>;
   delete(id: string): Promise<boolean>;
   findByCreatorId(creatorId: string): Promise<Campaign[]>;
+  findByUserId(userId: string): Promise<Campaign[]>;
+  addMember(campaignId: string, userId: string): Promise<void>;
 }

@@ -1,6 +1,6 @@
 import { IUserRepository } from '@domain/repositories/IUserRepository';
 import { User } from '@domain/entities/User';
-import { CreateUserDTO, UserResponseDTO, LoginDTO, LoginResponseDTO } from '@application/dto/UserDTO';
+import { CreateUserDTO, UserResponseDTO, LoginDTO, LoginResponseDTO, UpdateUserDTO } from '@application/dto/UserDTO';
 import { StringUtils, DateUtils } from '@shared/utils';
 import { ValidationError, NotFoundError, UnauthorizedError } from '@shared/errors/AppError';
 import { JWTService } from '@infrastructure/auth/JWTService';
@@ -110,6 +110,38 @@ export class LoginUseCase {
       email: user.email,
       token,
       refreshToken,
+    });
+  }
+}
+
+export class UpdateUserUseCase {
+  constructor(private userRepository: IUserRepository) {}
+
+  async execute(userId: string, dto: UpdateUserDTO): Promise<UserResponseDTO> {
+    const user = await this.userRepository.findById(userId);
+
+    if (!user) {
+      throw new NotFoundError('User');
+    }
+
+    if (dto.name !== undefined) {
+      const trimmed = dto.name.trim();
+      if (trimmed.length < 2) {
+        throw new ValidationError('Nome deve ter pelo menos 2 caracteres');
+      }
+      user.name = trimmed;
+    }
+
+    user.updatedAt = DateUtils.now();
+
+    const updated = await this.userRepository.update(user);
+
+    return new UserResponseDTO({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
     });
   }
 }

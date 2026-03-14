@@ -41,6 +41,7 @@ export class CampaignResponseDTO {
   dmType: 'AI' | 'HUMAN';
   creatorId: string;
   inviteCode?: string | null;
+  membersCount?: number;
   createdAt: Date;
   updatedAt: Date;
 
@@ -52,6 +53,7 @@ export class CampaignResponseDTO {
     dmType: 'AI' | 'HUMAN';
     creatorId: string;
     inviteCode?: string | null;
+    membersCount?: number;
     createdAt: Date;
     updatedAt: Date;
   }) {
@@ -62,6 +64,7 @@ export class CampaignResponseDTO {
     this.dmType = data.dmType;
     this.creatorId = data.creatorId;
     this.inviteCode = data.inviteCode;
+    this.membersCount = data.membersCount;
     this.createdAt = data.createdAt;
     this.updatedAt = data.updatedAt;
   }

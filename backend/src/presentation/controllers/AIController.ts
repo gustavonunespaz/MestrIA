@@ -55,4 +55,13 @@ export class AIController {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
+
+  async healthCheck(req: Request, res: Response): Promise<void> {
+    try {
+      const status = await this.generateAIResponseUseCase.healthCheck();
+      res.json(status);
+    } catch (error) {
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
 }

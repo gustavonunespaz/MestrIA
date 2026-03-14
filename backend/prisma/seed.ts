@@ -1,14 +1,25 @@
-import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcrypt';
+import { PrismaClient, Prisma } from '@prisma/client';
+import crypto from 'crypto';
+import { generateMap } from '../src/shared/utils/MapGenerator';
 
 const prisma = new PrismaClient();
+
+const avatarSvg = (label: string, color: string) => {
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <rect width="128" height="128" rx="24" fill="${color}" />
+  <circle cx="64" cy="64" r="42" fill="rgba(255,255,255,0.16)" />
+  <text x="64" y="78" font-size="42" font-family="Arial" font-weight="700" text-anchor="middle" fill="#F8FAFC">${label}</text>
+</svg>`;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
 
 async function main() {
   console.log('Iniciando preenchimento do banco de dados...');
 
-  // Limpar dados existentes
   await prisma.characterSpell.deleteMany();
   await prisma.characterItem.deleteMany();
+  await prisma.playerCharacter.deleteMany();
   await prisma.monster.deleteMany();
   await prisma.character.deleteMany();
   await prisma.campaignMember.deleteMany();
@@ -17,652 +28,540 @@ async function main() {
   await prisma.map.deleteMany();
   await prisma.session.deleteMany();
   await prisma.campaign.deleteMany();
-  await prisma.user.deleteMany();
   await prisma.spellTemplate.deleteMany();
   await prisma.itemTemplate.deleteMany();
   await prisma.monsterTemplate.deleteMany();
   await prisma.class.deleteMany();
   await prisma.race.deleteMany();
 
-  console.log('Dados existentes removidos');
+  console.log('Dados existentes removidos (exceto usuários)');
 
-  // Criar Raças
   const races = await Promise.all([
     prisma.race.create({
       data: {
-        name: 'Humano',
-        description: 'Uma raça versátil e ambiciosa',
-        traits: {
-          abilityScoreIncrease: 'Todos os atributos aumentam em 1',
-          age: 'Humanos atingem a idade adulta no final dos seus adolescentes',
-          alignment: 'Humanos tendem a nenhum alinhamento particular',
-          size: 'Médio',
-          speed: 30,
-        },
+        name: 'Humano de Asterion',
+        description: 'Adaptáveis, curiosos e movidos por sonhos de grandeza.',
+        traits: { abilityScoreIncrease: 'Todos +1', size: 'Médio', speed: 30, affinity: 'Versatilidade' },
       },
     }),
     prisma.race.create({
       data: {
-        name: 'Elfo',
-        description: 'Gracioso e de vida longa',
-        traits: {
-          abilityScoreIncrease: 'Destreza aumenta em 2',
-          age: 'Elfos podem viver mais de 700 anos',
-          alignment: 'Elfos amam liberdade e variedade',
-          size: 'Médio',
-          speed: 30,
-        },
+        name: 'Elfo da Aurora',
+        description: 'Elegantes e ancestrais, conectados aos ciclos da luz.',
+        traits: { abilityScoreIncrease: 'Destreza +2', size: 'Médio', speed: 30, affinity: 'Visão no Escuro' },
       },
     }),
     prisma.race.create({
       data: {
-        name: 'Anão',
-        description: 'Forte e resistente',
-        traits: {
-          abilityScoreIncrease: 'Constituição aumenta em 2',
-          age: 'Anões atingem a idade adulta por volta dos 50 anos',
-          alignment: 'A maioria dos anões tende a ser leal',
-          size: 'Médio',
-          speed: 25,
-        },
+        name: 'Anão do Ferro-Negro',
+        description: 'Forjadores de lendas, resistentes como rocha viva.',
+        traits: { abilityScoreIncrease: 'Constituição +2', size: 'Médio', speed: 25, affinity: 'Resiliência' },
       },
     }),
     prisma.race.create({
       data: {
-        name: 'Halfling',
-        description: 'Pequeno mas corajoso',
-        traits: {
-          abilityScoreIncrease: 'Destreza aumenta em 2',
-          age: 'Halflings atingem a idade adulta com 20 anos',
-          alignment: 'Halflings tendem para o bem caótico',
-          size: 'Pequeno',
-          speed: 25,
-        },
+        name: 'Tiefling Rubro',
+        description: 'Marcados por pactos antigos, carregam fogo na alma.',
+        traits: { abilityScoreIncrease: 'Carisma +2', size: 'Médio', speed: 30, affinity: 'Fogo Interior' },
+      },
+    }),
+    prisma.race.create({
+      data: {
+        name: 'Halfling do Vento',
+        description: 'Pequenos, velozes e mais corajosos do que parecem.',
+        traits: { abilityScoreIncrease: 'Destreza +2', size: 'Pequeno', speed: 25, affinity: 'Sorte' },
       },
     }),
   ]);
 
   console.log(`${races.length} raças criadas`);
 
-  // Criar Classes
   const classes = await Promise.all([
-    prisma.class.create({
-      data: {
-        name: 'Bárbaro',
-        description: 'Um guerreiro feroz que pode entrar em fúria',
-        hitDice: 'd12',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Bardo',
-        description: 'Um artista carismático com habilidades mágicas',
-        hitDice: 'd8',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Clérigo',
-        description: 'Um lançador de magia divina com poderes de cura',
-        hitDice: 'd8',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Druida',
-        description: 'Um lançador de magia da natureza que pode se transformar',
-        hitDice: 'd8',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Guerreiro',
-        description: 'Um guerreiro hábil com expertise em armas',
-        hitDice: 'd10',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Monge',
-        description: 'Um artista marcial com habilidades de ki',
-        hitDice: 'd8',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Paladino',
-        description: 'Um guerreiro sagrado vinculado por um juramento',
-        hitDice: 'd10',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Patrulheiro',
-        description: 'Um rastreador hábil e arqueiro',
-        hitDice: 'd10',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Ladino',
-        description: 'Um especialista furtivo em engano',
-        hitDice: 'd8',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Feiticeiro',
-        description: 'Um lançador de magia com magia inata',
-        hitDice: 'd6',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Bruxo',
-        description: 'Um lançador que fez um pacto com um ser poderoso',
-        hitDice: 'd8',
-      },
-    }),
-    prisma.class.create({
-      data: {
-        name: 'Mago',
-        description: 'Um lançador de magia culto da magia arcana',
-        hitDice: 'd6',
-      },
-    }),
+    prisma.class.create({ data: { name: 'Bárbaro', description: 'Fúria ancestral e força imparável', hitDice: 'd12' } }),
+    prisma.class.create({ data: { name: 'Bardo', description: 'Canções que alteram o destino', hitDice: 'd8' } }),
+    prisma.class.create({ data: { name: 'Clérigo', description: 'Canaliza o poder de divindades', hitDice: 'd8' } }),
+    prisma.class.create({ data: { name: 'Druida', description: 'Guardião das forças naturais', hitDice: 'd8' } }),
+    prisma.class.create({ data: { name: 'Guerreiro', description: 'Mestre da lâmina e da estratégia', hitDice: 'd10' } }),
+    prisma.class.create({ data: { name: 'Monge', description: 'Equilíbrio, disciplina e golpes precisos', hitDice: 'd8' } }),
+    prisma.class.create({ data: { name: 'Paladino', description: 'Juramento sagrado e justiça implacável', hitDice: 'd10' } }),
+    prisma.class.create({ data: { name: 'Patrulheiro', description: 'Rastreador e arqueiro das fronteiras', hitDice: 'd10' } }),
+    prisma.class.create({ data: { name: 'Ladino', description: 'Sombras, astúcia e golpes cirúrgicos', hitDice: 'd8' } }),
+    prisma.class.create({ data: { name: 'Feiticeiro', description: 'Magia inata e selvagem', hitDice: 'd6' } }),
+    prisma.class.create({ data: { name: 'Bruxo', description: 'Pactos com entidades antigas', hitDice: 'd8' } }),
+    prisma.class.create({ data: { name: 'Mago', description: 'Estudioso da magia arcana', hitDice: 'd6' } }),
   ]);
 
   console.log(`${classes.length} classes criadas`);
 
-  // Criar Usuários
-  const passwordHash = await bcrypt.hash('senha123', 10);
-  const users = await Promise.all([
-    prisma.user.create({
-      data: {
-        name: 'Alice Silva',
-        email: 'alice@example.com',
-        passwordHash,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Bob Santos',
-        email: 'bob@example.com',
-        passwordHash,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'Carol Oliveira',
-        email: 'carol@example.com',
-        passwordHash,
-      },
-    }),
-    prisma.user.create({
-      data: {
-        name: 'David Costa',
-        email: 'david@example.com',
-        passwordHash,
-      },
-    }),
-  ]);
-
-  console.log(`${users.length} usuários criados`);
-
-  // Criar Modelos de Feitiços
   const spells = await Promise.all([
     prisma.spellTemplate.create({
       data: {
-        name: 'Bola de Fogo',
-        level: 3,
+        name: 'Lâmina do Crepúsculo',
+        level: 2,
         school: 'Evocação',
         castingTime: '1 ação',
-        range: '150 pés',
+        range: '18 metros',
         duration: 'Instantâneo',
-        description: 'Um brilho luminoso passa por seu dedo apontado',
-        damage: {
-          type: 'fogo',
-          diceCount: 8,
-          diceType: 'd6',
-        },
+        description: 'Uma lâmina de sombras corta o ar e perfura o inimigo.',
+        damage: { type: 'sombria', diceCount: 3, diceType: 'd6' },
       },
     }),
     prisma.spellTemplate.create({
       data: {
-        name: 'Míssil Mágico',
+        name: 'Círculo da Aurora',
         level: 1,
-        school: 'Evocação',
-        castingTime: '1 ação',
-        range: '120 pés',
-        duration: 'Instantâneo',
-        description: 'Você cria três dardos luminosos de força mágica',
-        damage: {
-          type: 'força',
-          diceCount: 3,
-          diceType: 'd4',
-        },
-      },
-    }),
-    prisma.spellTemplate.create({
-      data: {
-        name: 'Palavra de Cura',
-        level: 1,
-        school: 'Evocação',
+        school: 'Abjuração',
         castingTime: '1 ação bônus',
-        range: '60 pés',
+        range: 'Toque',
         duration: 'Instantâneo',
-        description: 'Uma criatura à sua escolha que você possa ver ao alcance',
-        damage: null,
+        description: 'Luz quente envolve um aliado, restaurando esperança.',
+        damage: Prisma.JsonNull,
       },
     }),
     prisma.spellTemplate.create({
       data: {
-        name: 'Raio Relampejante',
+        name: 'Passos de Bruma',
+        level: 2,
+        school: 'Transmutação',
+        castingTime: '1 ação bônus',
+        range: 'Pessoal',
+        duration: '1 minuto',
+        description: 'Seu corpo se torna névoa, atravessando obstáculos leves.',
+        damage: Prisma.JsonNull,
+      },
+    }),
+    prisma.spellTemplate.create({
+      data: {
+        name: 'Rajada Glacial',
         level: 3,
         school: 'Evocação',
         castingTime: '1 ação',
-        range: 'Pessoal',
+        range: '36 metros',
         duration: 'Instantâneo',
-        description: 'Um raio de relâmpago formando uma linha de 100 pés',
-        damage: {
-          type: 'relâmpago',
-          diceCount: 8,
-          diceType: 'd6',
-        },
+        description: 'Uma rajada de gelo congela o ar e os ossos.',
+        damage: { type: 'gelo', diceCount: 6, diceType: 'd6' },
+      },
+    }),
+    prisma.spellTemplate.create({
+      data: {
+        name: 'Sussurros da Mente',
+        level: 2,
+        school: 'Encantamento',
+        castingTime: '1 ação',
+        range: '12 metros',
+        duration: '1 minuto',
+        description: 'Vozes do vazio abalam a confiança do alvo.',
+        damage: { type: 'psíquico', diceCount: 3, diceType: 'd4' },
+      },
+    }),
+    prisma.spellTemplate.create({
+      data: {
+        name: 'Muralha de Âmbar',
+        level: 3,
+        school: 'Evocação',
+        castingTime: '1 ação',
+        range: '30 metros',
+        duration: '10 minutos',
+        description: 'Ergue uma parede translúcida que bloqueia ataques.',
+        damage: Prisma.JsonNull,
+      },
+    }),
+    prisma.spellTemplate.create({
+      data: {
+        name: 'Fagulha de Dragão',
+        level: 1,
+        school: 'Evocação',
+        castingTime: '1 ação',
+        range: '18 metros',
+        duration: 'Instantâneo',
+        description: 'Uma fagulha explosiva que queima o alvo.',
+        damage: { type: 'fogo', diceCount: 2, diceType: 'd6' },
       },
     }),
   ]);
 
   console.log(`${spells.length} feitiços criados`);
 
-  // Criar Modelos de Itens
   const items = await Promise.all([
     prisma.itemTemplate.create({
       data: {
-        name: 'Espada Longa',
+        name: 'Lâmina de Ébano',
         type: 'arma',
-        description: 'Uma arma versátil de corpo-a-corpo',
-        properties: {
-          damage: '1d8 corte',
-          weight: 3,
-          rarity: 'comum',
-        },
+        description: 'Espada forjada em aço negro, leve e afiada.',
+        properties: { damage: '1d8 corte', rarity: 'raro', weight: 2.8 },
       },
     }),
     prisma.itemTemplate.create({
       data: {
-        name: 'Armadura de Placas',
+        name: 'Manto do Sussurro',
         type: 'armadura',
-        description: 'Armadura de placas de corpo inteiro',
-        properties: {
-          ac: 18,
-          weight: 65,
-          rarity: 'comum',
-        },
+        description: 'Capa que abafa passos e oculta o portador.',
+        properties: { ac: 13, rarity: 'incomum', weight: 4 },
       },
     }),
     prisma.itemTemplate.create({
       data: {
-        name: 'Poção de Cura',
+        name: 'Poção de Brilho Solar',
         type: 'poção',
-        description: 'Restaura 2d4+2 pontos de vida',
-        properties: {
-          healing: '2d4+2',
-          weight: 0.5,
-          rarity: 'comum',
-        },
+        description: 'Emana luz dourada e cura ferimentos leves.',
+        properties: { healing: '2d4+4', rarity: 'incomum', weight: 0.4 },
       },
     }),
     prisma.itemTemplate.create({
       data: {
-        name: 'Espada Curta',
+        name: 'Arco dos Ventos',
         type: 'arma',
-        description: 'Uma arma leve de corpo-a-corpo',
-        properties: {
-          damage: '1d6 perfuração',
-          weight: 2,
-          rarity: 'comum',
-        },
+        description: 'Arco leve que sussurra ao disparar.',
+        properties: { damage: '1d8 perfuração', rarity: 'raro', weight: 1.5 },
       },
     }),
     prisma.itemTemplate.create({
       data: {
-        name: 'Arco',
-        type: 'arma',
-        description: 'Uma arma à distância para setas',
-        properties: {
-          damage: '1d8 perfuração',
-          weight: 2,
-          rarity: 'comum',
-        },
+        name: 'Anel da Maré',
+        type: 'acessório',
+        description: 'Um anel azulado que vibra com a água próxima.',
+        properties: { bonus: 'Resistência a frio', rarity: 'incomum' },
+      },
+    }),
+    prisma.itemTemplate.create({
+      data: {
+        name: 'Escudo do Juramento',
+        type: 'armadura',
+        description: 'Escudo sagrado com inscrições antigas.',
+        properties: { ac: 2, rarity: 'raro', weight: 6 },
+      },
+    }),
+    prisma.itemTemplate.create({
+      data: {
+        name: 'Kit de Explorador',
+        type: 'utilitário',
+        description: 'Ferramentas e suprimentos para longas jornadas.',
+        properties: { uses: 5, rarity: 'comum', weight: 4 },
       },
     }),
   ]);
 
   console.log(`${items.length} itens criados`);
 
-  // Criar Modelos de Monstros
   const monsters = await Promise.all([
     prisma.monsterTemplate.create({
       data: {
-        name: 'Goblin',
+        name: 'Lobo Sombrio',
         challenge: 0.25,
-        armorClass: 15,
-        hitPoints: 7,
-        stats: {
-          strength: 8,
-          dexterity: 14,
-          constitution: 10,
-          intelligence: 10,
-          wisdom: 8,
-          charisma: 8,
-        },
-        actions: {
-          attack: 'Cimitarra. Ataque corpo-a-corpo com arma',
-          shortbow: 'Arco curto. Ataque à distância com arma',
-        },
-      },
-    }),
-    prisma.monsterTemplate.create({
-      data: {
-        name: 'Orc',
-        challenge: 0.5,
         armorClass: 13,
-        hitPoints: 15,
-        stats: {
-          strength: 16,
-          dexterity: 12,
-          constitution: 16,
-          intelligence: 7,
-          wisdom: 11,
-          charisma: 10,
-        },
-        actions: {
-          attack: 'Machado Grande. Ataque corpo-a-corpo com arma',
-        },
+        hitPoints: 11,
+        stats: { strength: 12, dexterity: 14, constitution: 12, intelligence: 5, wisdom: 10, charisma: 7 },
+        actions: { attack: 'Mordida. Ataque corpo-a-corpo com arma' },
       },
     }),
     prisma.monsterTemplate.create({
       data: {
-        name: 'Dragão Filhote',
+        name: 'Guardião de Pedra',
         challenge: 2,
-        armorClass: 17,
-        hitPoints: 22,
-        stats: {
-          strength: 15,
-          dexterity: 10,
-          constitution: 13,
-          intelligence: 12,
-          wisdom: 11,
-          charisma: 10,
-        },
-        actions: {
-          bite: 'Mordida. Ataque corpo-a-corpo com arma',
-          breathWeapon: 'Sopro de Fogo. O dragão expele fogo',
-        },
+        armorClass: 16,
+        hitPoints: 38,
+        stats: { strength: 16, dexterity: 8, constitution: 16, intelligence: 6, wisdom: 10, charisma: 5 },
+        actions: { attack: 'Punho esmagador. Ataque corpo-a-corpo com arma' },
       },
     }),
     prisma.monsterTemplate.create({
       data: {
-        name: 'Esqueleto',
-        challenge: 0.125,
+        name: 'Serpente Ígnea',
+        challenge: 3,
         armorClass: 15,
-        hitPoints: 13,
-        stats: {
-          strength: 10,
-          dexterity: 14,
-          constitution: 15,
-          intelligence: 6,
-          wisdom: 8,
-          charisma: 5,
-        },
-        actions: {
-          attack: 'Espada curta. Ataque corpo-a-corpo com arma',
-        },
+        hitPoints: 45,
+        stats: { strength: 14, dexterity: 16, constitution: 14, intelligence: 8, wisdom: 12, charisma: 9 },
+        actions: { attack: 'Investida flamejante. Ataque corpo-a-corpo' },
+      },
+    }),
+    prisma.monsterTemplate.create({
+      data: {
+        name: 'Mímico Nebuloso',
+        challenge: 1,
+        armorClass: 14,
+        hitPoints: 30,
+        stats: { strength: 14, dexterity: 10, constitution: 14, intelligence: 6, wisdom: 10, charisma: 6 },
+        actions: { attack: 'Pseudópode. Ataque corpo-a-corpo com arma' },
+      },
+    }),
+    prisma.monsterTemplate.create({
+      data: {
+        name: 'Oráculo Desgarrado',
+        challenge: 3,
+        armorClass: 15,
+        hitPoints: 52,
+        stats: { strength: 10, dexterity: 12, constitution: 14, intelligence: 16, wisdom: 18, charisma: 14 },
+        actions: { attack: 'Rajada psíquica. Ataque à distância com magia' },
       },
     }),
   ]);
 
   console.log(`${monsters.length} modelos de monstros criados`);
 
-  // Criar Campanha
+  const users = await prisma.user.findMany();
+  if (users.length === 0) {
+    console.log('Nenhum usuário encontrado. Criei somente dados que não dependem de usuários.');
+    return;
+  }
+
+  const creator = users[0];
+  const party = users.slice(0, 4);
+
   const campaign = await prisma.campaign.create({
     data: {
-      title: 'As Minas Perdidas de Phandalin',
-      description: 'Uma clássica aventura nos Reinos Esquecidos',
-      systemBase: 'D&D 5ª Edição',
+      title: 'Coroa de Névoa e Ferro',
+      description: 'Uma campanha épica em reinos despedaçados, onde rumores falam de uma coroa capaz de dobrar o tempo.',
+      systemBase: 'D&D 5e',
       dmType: 'AI',
-      creatorId: users[0].id,
-      inviteCode: 'CAMP1234',
+      creatorId: creator.id,
+      inviteCode: crypto.randomUUID(),
     },
   });
 
-  console.log('Campanha criada:', campaign.title);
+  const campaignTwo = users.length > 1
+    ? await prisma.campaign.create({
+      data: {
+        title: 'Marés de Âmbar',
+        description: 'Intrigas entre cidades costeiras e um culto que desperta monstros do fundo do mar.',
+        systemBase: 'D&D 5e',
+        dmType: 'AI',
+        creatorId: users[1].id,
+        inviteCode: crypto.randomUUID(),
+      },
+    })
+    : null;
 
-  // Adicionar membros da campanha
-  await Promise.all([
-    prisma.campaignMember.create({
-      data: {
-        userId: users[0].id,
-        campaignId: campaign.id,
-      },
-    }),
-    prisma.campaignMember.create({
-      data: {
-        userId: users[1].id,
-        campaignId: campaign.id,
-      },
-    }),
-    prisma.campaignMember.create({
-      data: {
-        userId: users[2].id,
-        campaignId: campaign.id,
-      },
-    }),
-  ]);
+  console.log('Campanhas criadas');
 
-  console.log('Membros da campanha adicionados');
+  await Promise.all(
+    party.map((user) => prisma.campaignMember.create({
+      data: { userId: user.id, campaignId: campaign.id },
+    })),
+  );
 
-  // Create Characters
-  const characters = await Promise.all([
-    prisma.character.create({
-      data: {
-        name: 'Thordak Ironforge',
-        level: 5,
-        hpCurrent: 45,
-        hpMax: 45,
-        userId: users[0].id,
-        campaignId: campaign.id,
-        raceId: races[2].id, // Dwarf
-        classId: classes[4].id, // Fighter
-        attributes: {
-          strength: 18,
-          dexterity: 10,
-          constitution: 16,
-          intelligence: 12,
-          wisdom: 14,
-          charisma: 13,
-        },
-      },
-    }),
-    prisma.character.create({
-      data: {
-        name: 'Liriel Moonwhisper',
-        level: 5,
-        hpCurrent: 28,
-        hpMax: 28,
-        userId: users[1].id,
-        campaignId: campaign.id,
-        raceId: races[1].id, // Elf
-        classId: classes[11].id, // Wizard
-        attributes: {
-          strength: 10,
-          dexterity: 14,
-          constitution: 12,
-          intelligence: 18,
-          wisdom: 13,
-          charisma: 11,
-        },
-      },
-    }),
-    prisma.character.create({
-      data: {
-        name: 'Aramina Goldensong',
-        level: 5,
-        hpCurrent: 34,
-        hpMax: 34,
-        userId: users[2].id,
-        campaignId: campaign.id,
-        raceId: races[0].id, // Human
-        classId: classes[2].id, // Cleric
-        attributes: {
-          strength: 14,
-          dexterity: 12,
-          constitution: 14,
-          intelligence: 12,
-          wisdom: 17,
-          charisma: 15,
-        },
-      },
-    }),
-  ]);
-
-  console.log(`Created ${characters.length} characters`);
-
-  // Create character spells
-  for (const char of characters) {
-    if (char.name.includes('Liriel') || char.name.includes('Aramina')) {
-      await prisma.characterSpell.create({
-        data: {
-          characterId: char.id,
-          spellId: spells[0].id,
-        },
-      });
-      await prisma.characterSpell.create({
-        data: {
-          characterId: char.id,
-          spellId: spells[1].id,
-        },
-      });
+  if (campaignTwo) {
+    await prisma.campaignMember.create({ data: { userId: creator.id, campaignId: campaignTwo.id } });
+    if (users[1]) {
+      await prisma.campaignMember.create({ data: { userId: users[1].id, campaignId: campaignTwo.id } });
     }
   }
 
-  console.log('Added spells to characters');
+  const characters = await Promise.all(
+    party.map((user, index) => {
+      const templates = [
+        { name: 'Ayla Ventobranco', classId: classes[1].id, raceId: races[1].id, stats: { strength: 10, dexterity: 16, constitution: 12, intelligence: 13, wisdom: 12, charisma: 16 } },
+        { name: 'Bram Garra-Rocha', classId: classes[0].id, raceId: races[2].id, stats: { strength: 18, dexterity: 12, constitution: 16, intelligence: 10, wisdom: 12, charisma: 8 } },
+        { name: 'Lyra Rubicor', classId: classes[9].id, raceId: races[3].id, stats: { strength: 8, dexterity: 14, constitution: 12, intelligence: 14, wisdom: 10, charisma: 18 } },
+        { name: 'Kael Maré-Dourada', classId: classes[7].id, raceId: races[0].id, stats: { strength: 13, dexterity: 16, constitution: 12, intelligence: 12, wisdom: 14, charisma: 11 } },
+      ];
+      const template = templates[index % templates.length];
+      return prisma.character.create({
+        data: {
+          name: template.name,
+          level: 3,
+          hpCurrent: 24 + index * 3,
+          hpMax: 24 + index * 3,
+          avatarUrl: avatarSvg(template.name.charAt(0), ['#1E40AF', '#7C3AED', '#DC2626', '#059669'][index % 4]),
+          userId: user.id,
+          campaignId: campaign.id,
+          raceId: template.raceId,
+          classId: template.classId,
+          attributes: template.stats,
+        },
+      });
+    }),
+  );
 
-  // Create character items
+  console.log(`${characters.length} personagens criados`);
+
   for (const char of characters) {
-    await prisma.characterItem.create({
-      data: {
-        characterId: char.id,
-        itemId: items[0].id, // Longsword
-      },
-    });
-    await prisma.characterItem.create({
-      data: {
-        characterId: char.id,
-        itemId: items[2].id, // Health Potion
-      },
-    });
+    await prisma.characterItem.create({ data: { characterId: char.id, itemId: items[0].id } });
+    await prisma.characterItem.create({ data: { characterId: char.id, itemId: items[2].id } });
   }
 
-  console.log('Added items to characters');
+  for (const char of characters) {
+    await prisma.characterSpell.create({ data: { characterId: char.id, spellId: spells[0].id } });
+    await prisma.characterSpell.create({ data: { characterId: char.id, spellId: spells[2].id } });
+    await prisma.characterSpell.create({ data: { characterId: char.id, spellId: spells[4].id } });
+  }
 
-  // Create Session
-  const session = await prisma.session.create({
+  await prisma.session.create({
     data: {
-      title: 'First Adventure',
+      title: 'Sessão 1 — O Eco das Ruínas',
       status: 'ACTIVE',
-      scheduledFor: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      scheduledFor: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
       campaignId: campaign.id,
     },
   });
 
-  console.log('Created session:', session.title);
-
-  // Create Messages
-  await Promise.all([
-    prisma.message.create({
-      data: {
-        content: 'You find yourselves in a bustling tavern...',
-        senderId: users[0].id,
-        campaignId: campaign.id,
-        senderRole: 'AI_DM',
-      },
-    }),
-    prisma.message.create({
-      data: {
-        content: 'Thordak orders an ale and scans the room',
-        senderId: users[0].id,
-        campaignId: campaign.id,
-        senderRole: 'USER',
-      },
-    }),
-    prisma.message.create({
-      data: {
-        content: 'Liriel approaches the bard to gather information',
-        senderId: users[1].id,
-        campaignId: campaign.id,
-        senderRole: 'USER',
-      },
-    }),
-  ]);
-
-  console.log('Created messages');
-
-  // Create Maps
-  const map = await prisma.map.create({
+  await prisma.message.create({
     data: {
-      name: 'Phandalin Town Map',
-      imageUrl: 'https://example.com/maps/phandalin.png',
+      content: 'A névoa cobre o vale e o som de sinos distantes anuncia a chegada da noite.',
+      senderId: creator.id,
+      campaignId: campaign.id,
+      senderRole: 'AI_DM',
+    },
+  });
+
+  await prisma.message.create({
+    data: {
+      content: 'Ayla observa as trilhas e sente o vento mudar.',
+      senderId: party[0].id,
+      campaignId: campaign.id,
+      senderRole: 'USER',
+    },
+  });
+
+  await prisma.message.create({
+    data: {
+      content: 'Bram bate o punho no escudo, jurando proteger o grupo.',
+      senderId: party[1]?.id || party[0].id,
+      campaignId: campaign.id,
+      senderRole: 'USER',
+    },
+  });
+
+  await prisma.message.create({
+    data: {
+      content: 'Uma sombra cruza a estrada, como se o céu piscasse.',
+      senderId: creator.id,
+      campaignId: campaign.id,
+      senderRole: 'AI_DM',
+    },
+  });
+
+  const generatedMap = generateMap(campaign.id);
+  const positions: Record<string, { x: number; y: number }> = {};
+  characters.forEach((char, idx) => {
+    positions[char.id] = { x: 2 + idx * 2, y: 3 + (idx % 3) };
+  });
+
+  await prisma.map.create({
+    data: {
+      id: generatedMap.id,
+      name: generatedMap.name,
+      imageUrl: generatedMap.imageUrl,
       gridConfig: {
-        columns: 20,
-        rows: 20,
-        cellSize: 5,
+        ...generatedMap.gridConfig,
+        positions,
       },
       campaignId: campaign.id,
     },
   });
 
-  console.log('Created map:', map.name);
-
-  // Create Combat Encounter
-  const encounter = await prisma.combatEncounter.create({
+  await prisma.combatEncounter.create({
     data: {
       isActive: false,
-      round: 0,
+      round: 1,
       turnOrder: {},
       campaignId: campaign.id,
     },
   });
 
-  console.log('Created combat encounter');
+  await prisma.monster.create({
+    data: {
+      name: 'Lobo Sombrio Alfa',
+      monsterTemplateId: monsters[0].id,
+      campaignId: campaign.id,
+    },
+  });
 
-  // Create Monsters
-  const monsterInstances = await Promise.all([
-    prisma.monster.create({
+  await prisma.monster.create({
+    data: {
+      name: 'Guardião de Pedra Quebrado',
+      monsterTemplateId: monsters[1].id,
+      campaignId: campaign.id,
+    },
+  });
+
+  await prisma.monster.create({
+    data: {
+      name: 'Mímico Nebuloso',
+      monsterTemplateId: monsters[3].id,
+      campaignId: campaign.id,
+    },
+  });
+
+  if (campaignTwo) {
+    const secondaryChars = await Promise.all([
+      prisma.character.create({
+        data: {
+          name: 'Soren Maré-Ambar',
+          level: 2,
+          hpCurrent: 18,
+          hpMax: 18,
+          avatarUrl: avatarSvg('S', '#0EA5E9'),
+          userId: users[1]?.id || creator.id,
+          campaignId: campaignTwo.id,
+          raceId: races[0].id,
+          classId: classes[7].id,
+          attributes: { strength: 12, dexterity: 15, constitution: 12, intelligence: 10, wisdom: 14, charisma: 11 },
+        },
+      }),
+      prisma.character.create({
+        data: {
+          name: 'Maelin da Espuma',
+          level: 2,
+          hpCurrent: 16,
+          hpMax: 16,
+          avatarUrl: avatarSvg('M', '#F59E0B'),
+          userId: creator.id,
+          campaignId: campaignTwo.id,
+          raceId: races[1].id,
+          classId: classes[1].id,
+          attributes: { strength: 9, dexterity: 14, constitution: 11, intelligence: 13, wisdom: 12, charisma: 16 },
+        },
+      }),
+    ]);
+
+    for (const char of secondaryChars) {
+      await prisma.characterItem.create({ data: { characterId: char.id, itemId: items[3].id } });
+    }
+
+    await prisma.session.create({
       data: {
-        name: 'Goblin Scout',
-        monsterTemplateId: monsters[0].id,
-        campaignId: campaign.id,
+        title: 'Sessão 0 — A Chama na Maré',
+        status: 'PLANNED',
+        scheduledFor: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+        campaignId: campaignTwo.id,
       },
-    }),
-    prisma.monster.create({
+    });
+
+    await prisma.message.create({
       data: {
-        name: 'Orc Warrior',
-        monsterTemplateId: monsters[1].id,
-        campaignId: campaign.id,
+        content: 'O som das ondas se mistura a cânticos ancestrais no cais.',
+        senderId: users[1]?.id || creator.id,
+        campaignId: campaignTwo.id,
+        senderRole: 'AI_DM',
       },
-    }),
-  ]);
+    });
 
-  console.log(`Created ${monsterInstances.length} monster instances`);
+    const mapTwo = generateMap(campaignTwo.id);
+    await prisma.map.create({
+      data: {
+        id: mapTwo.id,
+        name: mapTwo.name,
+        imageUrl: mapTwo.imageUrl,
+        gridConfig: mapTwo.gridConfig,
+        campaignId: campaignTwo.id,
+      },
+    });
 
-  console.log('Database seed completed successfully!');
+    await prisma.monster.create({
+      data: {
+        name: 'Serpente Ígnea Escarlate',
+        monsterTemplateId: monsters[2].id,
+        campaignId: campaignTwo.id,
+      },
+    });
+  }
+
+  console.log('Banco alimentado com sucesso.');
 }
 
 main()
   .catch((e) => {
-    console.error('Error during seed:', e);
+    console.error('Erro ao popular:', e);
     process.exit(1);
   })
   .finally(async () => {

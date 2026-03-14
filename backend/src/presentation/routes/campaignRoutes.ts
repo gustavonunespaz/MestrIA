@@ -11,6 +11,9 @@ const campaignController = new CampaignController(campaignRepository);
 router.post('/', authMiddleware, (req, res) =>
   campaignController.create(req, res),
 );
+router.post('/join', authMiddleware, (req, res) =>
+  campaignController.joinByCode(req, res),
+);
 router.get('/list', authMiddleware, (req, res) =>
   campaignController.listByCreator(req, res),
 );

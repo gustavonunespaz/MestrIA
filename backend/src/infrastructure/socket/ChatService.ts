@@ -200,4 +200,12 @@ export class ChatService {
       timestamp: DateUtils.now(),
     });
   }
+
+  broadcastMapUpdate(campaignId: string, payload: Record<string, any>): void {
+    this.io.to(`campaign:${campaignId}`).emit('map-updated', {
+      campaignId,
+      payload,
+      timestamp: DateUtils.now(),
+    });
+  }
 }

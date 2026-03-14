@@ -1,4 +1,4 @@
-import type { AuthResponse, Campaign, Character, LoginPayload, Message, User, Session, Race, CharClass } from '@/types/models';
+import type { AuthResponse, Campaign, CampaignMap, Character, LoginPayload, Message, User, Session, Race, CharClass } from '@/types/models';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -24,7 +24,14 @@ async function request<T>(path: string, options: RequestInit = {}, timeoutMs: nu
       const err = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error(err.message || 'Request failed');
     }
-    return res.json();
+    if (res.status === 204) {
+      return undefined as T;
+    }
+    const text = await res.text();
+    if (!text) {
+      return undefined as T;
+    }
+    return JSON.parse(text) as T;
   } catch (err: any) {
     if (err?.name === 'AbortError') {
       throw new Error('Request timeout');
@@ -50,12 +57,18 @@ export const api = {
     return normalizeAuthResponse(loginRes);
   },
   getMe: () => request<User>('/users/auth/me'),
+  updateMe: (data: { name?: string }) =>
+    request<User>('/users/auth/me', { method: 'PATCH', body: JSON.stringify(data) }),
 
   // Campaigns
   getCampaigns: () => request<Campaign[]>('/campaigns/list'),
   getCampaign: (id: string) => request<Campaign>(`/campaigns/${id}`),
   createCampaign: (data: { title: string; description: string; systemBase: string; dmType: string }) =>
     request<Campaign>('/campaigns', { method: 'POST', body: JSON.stringify(data) }),
+  joinCampaign: (inviteCode: string) =>
+    request<Campaign>('/campaigns/join', { method: 'POST', body: JSON.stringify({ inviteCode }) }),
+  deleteCampaign: (id: string) =>
+    request<void>(`/campaigns/${id}`, { method: 'DELETE' }),
 
   // Characters
   getCharacters: (campaignId: string) => request<Character[]>(`/characters/campaign/list?campaignId=${campaignId}`),
@@ -104,6 +117,12 @@ export const api = {
   getSessions: (campaignId: string) => request<Session[]>(`/sessions/campaign/${campaignId}`),
   createSession: (data: { campaignId: string; title?: string; scheduledFor?: string }) =>
     request<Session>('/sessions', { method: 'POST', body: JSON.stringify(data) }),
+
+  // Maps
+  getCampaignMap: (campaignId: string) => request<CampaignMap>(`/maps/campaign/${campaignId}`),
+  generateCampaignMap: (campaignId: string) => request<CampaignMap>(`/maps/campaign/${campaignId}/generate`, { method: 'POST' }),
+  updateCampaignMapPositions: (campaignId: string, positions: Record<string, { x: number; y: number }>) =>
+    request<CampaignMap>(`/maps/campaign/${campaignId}/positions`, { method: 'PATCH', body: JSON.stringify({ positions }) }),
 };
 
 function normalizeAuthResponse(res: any): AuthResponse {

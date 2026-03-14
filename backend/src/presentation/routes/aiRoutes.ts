@@ -17,4 +17,7 @@ router.post('/circuit-breaker/reset', (req, res) =>
   aiController.resetCircuitBreakers(req, res),
 );
 
+// Health check for Groq and Ollama
+router.get('/health', (req, res) => aiController.healthCheck(req, res));
+
 export { router as aiRoutes };

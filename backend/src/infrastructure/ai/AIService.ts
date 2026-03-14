@@ -29,6 +29,25 @@ export class AIService {
     this.ollamaBreaker = new CircuitBreaker(3, 2, 30000);
   }
 
+  private async withRetry<T>(fn: () => Promise<T>, retries: number, delayMs: number): Promise<T> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= retries; attempt += 1) {
+      try {
+        return await fn();
+      } catch (error: any) {
+        lastError = error;
+        const status = error?.response?.status;
+        const code = error?.code;
+        const shouldRetry = status === 429 || (status >= 500 && status < 600) || code === 'ECONNRESET' || code === 'ECONNREFUSED' || code === 'ETIMEDOUT';
+        if (!shouldRetry || attempt === retries) {
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, delayMs));
+      }
+    }
+    throw lastError;
+  }
+
   async generateDMResponse(context: PromptContext): Promise<AIResponse> {
     console.log('[AI Service] Generating DM response...');
 
@@ -69,21 +88,26 @@ export class AIService {
     ];
 
     try {
-      const response = await axios.post(
-        this.groqApiUrl,
-        {
-          model: this.groqModel,
-          messages,
-          temperature: 0.8,
-          max_tokens: 1024,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${this.groqApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          timeout: 30000,
-        },
+      const response = await this.withRetry(
+        () =>
+          axios.post(
+            this.groqApiUrl,
+            {
+              model: this.groqModel,
+              messages,
+              temperature: 0.8,
+              max_tokens: 1024,
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${this.groqApiKey}`,
+                'Content-Type': 'application/json',
+              },
+              timeout: 30000,
+            },
+          ),
+        2,
+        800,
       );
 
       const content = response.data.choices[0]?.message?.content;
@@ -112,17 +136,22 @@ export class AIService {
     const systemPrompt = `${context.systemMessage}\n\nContexto da Campanha: ${JSON.stringify(context.campaignContext || {})}`;
 
     try {
-      const response = await axios.post(
-        `${this.ollamaUrl}/api/generate`,
-        {
-          model: this.ollamaModel,
-          prompt: `${systemPrompt}\n\nUsuário: ${context.userMessage}\n\nOráculo:`,
-          stream: false,
-          temperature: 0.8,
-        },
-        {
-          timeout: 120000,
-        },
+      const response = await this.withRetry(
+        () =>
+          axios.post(
+            `${this.ollamaUrl}/api/generate`,
+            {
+              model: this.ollamaModel,
+              prompt: `${systemPrompt}\n\nUsuário: ${context.userMessage}\n\nOráculo:`,
+              stream: false,
+              temperature: 0.8,
+            },
+            {
+              timeout: 120000,
+            },
+          ),
+        1,
+        1000,
       );
 
       const content = response.data.response?.trim();
@@ -192,6 +221,71 @@ export class AIService {
     this.groqBreaker.reset();
     this.ollamaBreaker.reset();
     console.log('[AI Service] Circuit breakers reset');
+  }
+
+  async healthCheck(): Promise<{
+    groq: { ok: boolean; latencyMs?: number; error?: string };
+    ollama: { ok: boolean; latencyMs?: number; error?: string };
+  }> {
+    const groqStart = Date.now();
+    const ollamaStart = Date.now();
+
+    const groqPromise = this.pingGroq()
+      .then(() => ({ ok: true, latencyMs: Date.now() - groqStart }))
+      .catch((err: any) => ({ ok: false, error: err?.message || 'Groq failed' }));
+
+    const ollamaPromise = this.pingOllama()
+      .then(() => ({ ok: true, latencyMs: Date.now() - ollamaStart }))
+      .catch((err: any) => ({ ok: false, error: err?.message || 'Ollama failed' }));
+
+    const [groq, ollama] = await Promise.all([groqPromise, ollamaPromise]);
+
+    return { groq, ollama };
+  }
+
+  private async pingGroq(): Promise<void> {
+    if (!this.groqApiKey || this.groqApiKey === 'your-groq-api-key') {
+      throw new Error('GROQ_API_KEY not configured');
+    }
+    await this.withRetry(
+      () =>
+        axios.post(
+          this.groqApiUrl,
+          {
+            model: this.groqModel,
+            messages: [{ role: 'user', content: 'Responda apenas com OK.' }],
+            temperature: 0,
+            max_tokens: 8,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${this.groqApiKey}`,
+              'Content-Type': 'application/json',
+            },
+            timeout: 15000,
+          },
+        ),
+      1,
+      500,
+    );
+  }
+
+  private async pingOllama(): Promise<void> {
+    await this.withRetry(
+      () =>
+        axios.post(
+          `${this.ollamaUrl}/api/generate`,
+          {
+            model: this.ollamaModel,
+            prompt: 'Responda apenas com OK.',
+            stream: false,
+            options: { num_predict: 8 },
+          },
+          { timeout: 20000 },
+        ),
+      1,
+      500,
+    );
   }
 }
 

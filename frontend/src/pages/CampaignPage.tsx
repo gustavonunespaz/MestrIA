@@ -8,15 +8,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import CharacterSheet from '@/components/rpg/CharacterSheet';
 import DiceRoller from '@/components/rpg/DiceRoller';
+import CampaignMap from '@/components/rpg/CampaignMap';
+import AmbientSoundscape from '@/components/rpg/AmbientSoundscape';
 import { CreateCharacterDialog } from '@/components/CreateCharacterDialog';
-import { SessionList } from '@/components/SessionList';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, Send, Users, ScrollText, Dices, MapIcon, Loader2, Sparkles,
+  ArrowLeft, Send, Users, ScrollText, Dices, MapIcon, Loader2, Sparkles, Copy, Music,
 } from 'lucide-react';
 import type { Message, Character } from '@/types/models';
 
-type RightTab = 'character' | 'dice' | 'members';
+type RightTab = 'character' | 'members' | 'ambience';
 
 const CampaignPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,9 +27,12 @@ const CampaignPage = () => {
 
   const [message, setMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [startingStory, setStartingStory] = useState(false);
   const [rightTab, setRightTab] = useState<RightTab>('character');
   const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  const [showTimestamps, setShowTimestamps] = useState(true);
 
   const { data: campaign } = useQuery({
     queryKey: ['campaign', id],
@@ -76,6 +80,11 @@ const CampaignPage = () => {
     [charactersWithRefs, user],
   );
 
+  const storyStarted = useMemo(
+    () => messages.some((msg) => msg.senderRole === 'AI_DM'),
+    [messages],
+  );
+
   // Select first user character by default
   useEffect(() => {
     if (charactersWithRefs.length && !selectedCharacter) {
@@ -112,17 +121,45 @@ const CampaignPage = () => {
 
     socket.on('new-message', (msg: Message) => {
       queryClient.setQueryData<Message[]>(['messages', id], (old) => [...(old || []), msg]);
+      if (msg.senderId !== user?.id && (msg.senderRole === 'AI_DM' || msg.senderRole === 'HUMAN_DM')) {
+        toast.message(`Mestre: ${msg.content.slice(0, 80)}${msg.content.length > 80 ? '...' : ''}`);
+      }
+    });
+
+    socket.on('user-joined', (payload: { userId: string; campaignId: string }) => {
+      if (payload.campaignId === id && payload.userId !== user?.id) {
+        toast.message('Novo jogador entrou na campanha.');
+      }
     });
 
     return () => {
       socket.off('new-message');
+      socket.off('user-joined');
     };
   }, [id, queryClient, user]);
 
   // Auto scroll
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (autoScroll) {
+      chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, autoScroll]);
+
+  useEffect(() => {
+    const settingsRaw = localStorage.getItem('mestria_settings');
+    if (!settingsRaw) return;
+    try {
+      const parsed = JSON.parse(settingsRaw);
+      if (parsed?.autoScrollChat !== undefined) {
+        setAutoScroll(Boolean(parsed.autoScrollChat));
+      }
+      if (parsed?.showTimestamps !== undefined) {
+        setShowTimestamps(Boolean(parsed.showTimestamps));
+      }
+    } catch {
+      // ignore invalid settings
+    }
+  }, []);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,36 +186,123 @@ const CampaignPage = () => {
     }
   };
 
+  const handleStartStory = async () => {
+    if (!id || startingStory) return;
+    setStartingStory(true);
+    try {
+      const prompt = `Kara, inicie a historia desta campanha como Mestra narradora. Comece pela cena inicial e introduza o tom, o lugar e a primeira situacao.`;
+      const ai = await api.generateAI(id, prompt, { characterId: selectedCharacter?.id || null, type: 'narrative' });
+      if (!ai?.content) {
+        throw new Error('IA nao retornou resposta');
+      }
+      await api.sendMessage(id, ai.content, { senderRole: 'AI_DM' });
+      await queryClient.invalidateQueries({ queryKey: ['messages', id] });
+      toast.success('Historia iniciada por Kara.');
+    } catch {
+      toast.error('Falha ao iniciar a historia.');
+    } finally {
+      setStartingStory(false);
+    }
+  };
+
   const isDM = (role?: string) => role === 'AI_DM' || role === 'HUMAN_DM';
+  const getDMLabel = (role?: string) => (role === 'AI_DM' ? '🎭 Kara' : '🎭 Mestre');
+  const getCharacterNameForMessage = (msg: Message) => {
+    if (isDM(msg.senderRole)) return getDMLabel(msg.senderRole);
+    const character = charactersWithRefs.find((char) => char.userId === msg.senderId);
+    return character?.name || msg.sender?.name || 'Personagem';
+  };
+
+  const handleCopyInvite = async () => {
+    if (!campaign?.inviteCode) return;
+    try {
+      await navigator.clipboard.writeText(campaign.inviteCode);
+      toast.success('Codigo de convite copiado!');
+    } catch {
+      toast.error('Nao foi possivel copiar o codigo.');
+    }
+  };
+
+  const handleRoll = async (result: { dice: string; rolls: number[]; total: number; mode?: string; rawRolls?: number[]; modifier?: number; label?: string }) => {
+    if (!id) return;
+    try {
+      const label = result.label ? `${result.label} ` : '';
+      const content = `${label}rolou ${result.dice}: [${result.rolls.join(', ')}] = ${result.total}`;
+      await api.sendMessage(id, content, {
+        senderRole: 'USER',
+        diceRoll: {
+          dice: result.dice,
+          rolls: result.rolls,
+          total: result.total,
+          mode: result.mode,
+          rawRolls: result.rawRolls,
+          modifier: result.modifier,
+          label: result.label,
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: ['messages', id] });
+    } catch {
+      toast.error('Nao foi possivel enviar o resultado para o chat.');
+    }
+  };
 
   const tabItems: { key: RightTab; icon: typeof ScrollText; label: string }[] = [
     { key: 'character', icon: ScrollText, label: 'Ficha' },
-    { key: 'dice', icon: Dices, label: 'Dados' },
+    { key: 'ambience', icon: Music, label: 'Som' },
     { key: 'members', icon: Users, label: 'Grupo' },
   ];
 
   return (
-    <div className="flex h-screen bg-background">
-      {/* Left Sidebar */}
-      <div className="glass-panel flex w-16 flex-col items-center gap-4 border-r border-border py-4">
-        <button onClick={() => navigate('/')} className="text-muted-foreground transition-colors hover:text-foreground">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
-        <div className="my-2 h-px w-8 bg-border" />
-        {charactersWithRefs.map((char) => (
-          <button
-            key={char.id}
-            onClick={() => setSelectedCharacter(char)}
-            title={char.name}
-            className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold transition-all ${
-              selectedCharacter?.id === char.id
-                ? 'bg-primary text-primary-foreground ring-2 ring-primary/50'
-                : 'bg-secondary text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {char.name.charAt(0).toUpperCase()}
+    <div className="flex min-h-screen flex-col bg-background lg:h-screen lg:flex-row">
+      {/* Left Column (Avatares + Dados + Mapa) */}
+      <div className="flex flex-col border-b border-border lg:flex-row lg:border-b-0 lg:border-r">
+        <div className="glass-panel flex w-full flex-row items-center gap-4 overflow-x-auto border-b border-border px-4 py-4 lg:w-16 lg:flex-col lg:border-b-0 lg:border-r lg:px-0">
+          <button onClick={() => navigate('/')} className="text-muted-foreground transition-colors hover:text-foreground">
+            <ArrowLeft className="h-5 w-5" />
           </button>
-        ))}
+          <div className="my-2 h-px w-8 bg-border lg:my-2" />
+          {charactersWithRefs.map((char) => (
+            <button
+              key={char.id}
+              onClick={() => setSelectedCharacter(char)}
+              title={char.name}
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                selectedCharacter?.id === char.id
+                  ? 'bg-primary text-primary-foreground ring-2 ring-primary/50'
+                  : 'bg-secondary text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {char.avatarUrl ? (
+                <img src={char.avatarUrl} alt={char.name} className="h-full w-full rounded-full object-cover" />
+              ) : (
+                char.name.charAt(0).toUpperCase()
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="glass-panel flex w-full flex-col lg:w-[420px]">
+          <div className="max-h-[38vh] overflow-y-auto border-b border-border p-4">
+            <DiceRoller
+              onRoll={handleRoll}
+              abilityScores={{
+                strength: Number.isFinite(Number(selectedCharacter?.attributes?.strength)) ? Number(selectedCharacter?.attributes?.strength) : undefined,
+                dexterity: Number.isFinite(Number(selectedCharacter?.attributes?.dexterity)) ? Number(selectedCharacter?.attributes?.dexterity) : undefined,
+                constitution: Number.isFinite(Number(selectedCharacter?.attributes?.constitution)) ? Number(selectedCharacter?.attributes?.constitution) : undefined,
+                intelligence: Number.isFinite(Number(selectedCharacter?.attributes?.intelligence)) ? Number(selectedCharacter?.attributes?.intelligence) : undefined,
+                wisdom: Number.isFinite(Number(selectedCharacter?.attributes?.wisdom)) ? Number(selectedCharacter?.attributes?.wisdom) : undefined,
+                charisma: Number.isFinite(Number(selectedCharacter?.attributes?.charisma)) ? Number(selectedCharacter?.attributes?.charisma) : undefined,
+              }}
+            />
+          </div>
+          <div className="flex-1 min-h-0 overflow-hidden p-4">
+            <CampaignMap
+              campaignId={id!}
+              characters={charactersWithRefs}
+              myCharacterId={myCharacter?.id}
+              currentUserId={user?.id}
+            />
+          </div>
+        </div>
       </div>
 
       {/* Center - Chat */}
@@ -190,10 +314,29 @@ const CampaignPage = () => {
             <h2 className="font-display text-lg font-bold text-foreground">{campaign?.title || 'Carregando...'}</h2>
             <span className="text-xs text-muted-foreground">{campaign?.systemBase}</span>
           </div>
+          {campaign?.inviteCode && (
+            <button
+              onClick={handleCopyInvite}
+              className="ml-4 flex items-center gap-2 rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Copy className="h-3.5 w-3.5" />
+              {campaign.inviteCode}
+            </button>
+          )}
           {campaign?.dmType === 'AI' && (
-            <span className="ml-auto flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1 text-xs text-accent">
-              <Sparkles className="h-3 w-3" /> IA Narradora
-            </span>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                onClick={handleStartStory}
+                disabled={startingStory || storyStarted}
+                className="flex items-center gap-2 rounded-full bg-primary px-3 py-1 text-xs text-primary-foreground transition-all hover:bg-primary/90 disabled:opacity-60"
+              >
+                {startingStory ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                {storyStarted ? 'Historia iniciada' : 'Iniciar historia'}
+              </button>
+              <span className="flex items-center gap-1 rounded-full bg-accent/15 px-3 py-1 text-xs text-accent">
+                <Sparkles className="h-3 w-3" /> IA Narradora
+              </span>
+            </div>
           )}
         </div>
 
@@ -215,11 +358,13 @@ const CampaignPage = () => {
               >
                 <div className="mb-1 flex items-center gap-2">
                   <span className={`text-sm font-semibold ${isDM(msg.senderRole) ? 'text-accent' : 'text-primary'}`}>
-                    {isDM(msg.senderRole) ? '🎭 Narrador' : msg.sender?.name || 'Aventureiro'}
+                    {getCharacterNameForMessage(msg)}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
+                  {showTimestamps && (
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(msg.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
                 </div>
                 <div className="prose prose-sm prose-invert max-w-none text-foreground">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
@@ -227,7 +372,15 @@ const CampaignPage = () => {
                 {msg.diceRoll && (
                   <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/15 px-3 py-1 text-sm">
                     <Dices className="h-4 w-4 text-primary" />
-                    <span className="text-foreground">{msg.diceRoll.dice}: <strong>{msg.diceRoll.total}</strong></span>
+                    <span className="text-foreground">
+                      {(msg.diceRoll as any)?.dice}: <strong>{(msg.diceRoll as any)?.total}</strong>
+                    </span>
+                    {(msg.diceRoll as any)?.rolls && (
+                      <span className="text-xs text-muted-foreground">
+                        [{(msg.diceRoll as any)?.rolls?.join(', ')}]
+                        {(msg.diceRoll as any)?.rawRolls ? ` (${(msg.diceRoll as any)?.rawRolls?.join(', ')})` : ''}
+                      </span>
+                    )}
                   </div>
                 )}
               </motion.div>
@@ -255,7 +408,7 @@ const CampaignPage = () => {
       </div>
 
       {/* Right Sidebar */}
-      <div className="glass-panel flex w-80 flex-col border-l border-border">
+      <div className="glass-panel flex w-full flex-col border-t border-border lg:w-80 lg:border-l lg:border-t-0">
         {/* Tabs */}
         <div className="flex border-b border-border">
           {tabItems.map(({ key, icon: Icon, label }) => (
@@ -280,7 +433,7 @@ const CampaignPage = () => {
           {rightTab === 'character' && !selectedCharacter && (
             <p className="text-center text-sm text-muted-foreground">Nenhum personagem selecionado</p>
           )}
-          {rightTab === 'dice' && <DiceRoller />}
+          {rightTab === 'ambience' && <AmbientSoundscape />}
           {rightTab === 'members' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
@@ -289,8 +442,12 @@ const CampaignPage = () => {
               </div>
               {charactersWithRefs.map((char) => (
                 <div key={char.id} className="flex items-center gap-3 rounded-lg bg-secondary/40 p-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-                    {char.name.charAt(0)}
+                  <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-primary/20 text-xs font-bold text-primary">
+                    {char.avatarUrl ? (
+                      <img src={char.avatarUrl} alt={char.name} className="h-full w-full object-cover" />
+                    ) : (
+                      char.name.charAt(0)
+                    )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium text-foreground">{char.name}</p>

@@ -12,6 +12,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "seed": "ts-node prisma/seed.ts",
+    "ai:health": "ts-node scripts/ai-health.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

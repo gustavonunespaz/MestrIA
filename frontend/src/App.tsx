@@ -8,6 +8,8 @@ import DashboardPage from "./pages/DashboardPage";
 import CampaignPage from "./pages/CampaignPage";
 import NotFound from "./pages/NotFound";
 import CharacterCreatePage from "./pages/CharacterCreatePage";
+import UserProfilePage from "./pages/UserProfilePage";
+import UserSettingsPage from "./pages/UserSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +38,8 @@ const App = () => (
             <Route path="/" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/campaign/:id" element={<ProtectedRoute><CampaignPage /></ProtectedRoute>} />
             <Route path="/campaign/:id/character/create" element={<ProtectedRoute><CharacterCreatePage /></ProtectedRoute>} />
+            <Route path="/account" element={<ProtectedRoute><UserProfilePage /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><UserSettingsPage /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

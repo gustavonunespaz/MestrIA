@@ -6,6 +6,7 @@ export interface CharacterProps {
   hpMax: number;
   isBot?: boolean | null;
   botType?: string | null;
+  avatarUrl?: string | null;
   userId: string;
   campaignId: string;
   raceId: string;
@@ -30,6 +31,7 @@ export class Character {
   hpMax: number;
   isBot?: boolean | null;
   botType?: string | null;
+  avatarUrl?: string | null;
   userId: string;
   campaignId: string;
   raceId: string;
@@ -53,6 +55,7 @@ export class Character {
     this.hpMax = props.hpMax;
     this.isBot = props.isBot;
     this.botType = props.botType;
+    this.avatarUrl = props.avatarUrl;
     this.userId = props.userId;
     this.campaignId = props.campaignId;
     this.raceId = props.raceId;

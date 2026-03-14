@@ -65,3 +65,11 @@ export class LoginResponseDTO {
     this.refreshToken = data.refreshToken;
   }
 }
+
+export class UpdateUserDTO {
+  name?: string;
+
+  constructor(data: { name?: string }) {
+    this.name = data.name;
+  }
+}

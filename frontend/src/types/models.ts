@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface Campaign {
@@ -22,6 +23,7 @@ export interface Campaign {
   creator?: User;
   members?: CampaignMember[];
   _count?: { members: number; characters: number; messages: number };
+  membersCount?: number;
 }
 
 export interface CampaignMember {
@@ -103,11 +105,25 @@ export interface CharacterSpellWithTemplate {
   spell: SpellTemplate;
 }
 
+export interface CampaignMap {
+  id: string;
+  name: string;
+  imageUrl: string;
+  gridConfig: {
+    width: number;
+    height: number;
+    tiles: string[];
+    positions?: Record<string, { x: number; y: number }>;
+    [key: string]: unknown;
+  };
+  campaignId: string;
+}
+
 export interface Message {
   id: string;
   content: string;
   senderId: string;
-  diceRoll?: { dice: string; result: number; total: number } | null;
+  diceRoll?: Record<string, unknown> | null;
   isWhisper: boolean;
   senderRole?: SenderRole;
   createdAt: string;

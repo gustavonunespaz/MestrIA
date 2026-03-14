@@ -26,7 +26,7 @@ export class GenerateAIResponseUseCase {
 
       const messageHistory = await contextManagerService.getRecentMessages(
         dto.campaignId,
-        5,
+        12,
       );
 
       let campaignContext;
@@ -80,5 +80,9 @@ export class GenerateAIResponseUseCase {
 
   resetCircuitBreakers() {
     aiService.resetCircuitBreakers();
+  }
+
+  async healthCheck() {
+    return aiService.healthCheck();
   }
 }

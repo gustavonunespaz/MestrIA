@@ -51,8 +51,12 @@ const CharacterSheet = ({ character }: Props) => {
     <div className="space-y-4">
       {/* Header */}
       <div className="text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20 text-2xl font-bold text-primary">
-          {character.name.charAt(0)}
+        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full bg-primary/20 text-2xl font-bold text-primary">
+          {character.avatarUrl ? (
+            <img src={character.avatarUrl} alt={character.name} className="h-full w-full object-cover" />
+          ) : (
+            character.name.charAt(0)
+          )}
         </div>
         <h3 className="font-display text-xl font-bold text-foreground">{character.name}</h3>
         <p className="text-xs text-muted-foreground">

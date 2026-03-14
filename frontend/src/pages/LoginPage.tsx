@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Chrome, Facebook } from 'lucide-react';
+import { toast } from 'sonner';
 import mestriaLogo from '@/assets/mestria-logo.svg';
 
 const LoginPage = () => {
@@ -84,6 +85,25 @@ const LoginPage = () => {
             {isRegister ? 'Criar Conta' : 'Entrar'}
           </button>
         </form>
+
+        <div className="mt-5 space-y-3">
+          <button
+            type="button"
+            onClick={() => toast.message('Login com Google sera liberado assim que as chaves forem configuradas.')}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground transition-all hover:bg-secondary/70"
+          >
+            <Chrome className="h-4 w-4" />
+            Entrar com Google
+          </button>
+          <button
+            type="button"
+            onClick={() => toast.message('Login com Facebook sera liberado assim que as chaves forem configuradas.')}
+            className="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-secondary px-4 py-3 text-sm font-medium text-foreground transition-all hover:bg-secondary/70"
+          >
+            <Facebook className="h-4 w-4" />
+            Entrar com Facebook
+          </button>
+        </div>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
           {isRegister ? 'Já tem uma conta?' : 'Não tem conta?'}{' '}

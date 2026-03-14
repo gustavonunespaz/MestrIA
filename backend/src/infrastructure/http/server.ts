@@ -7,6 +7,7 @@ import { campaignRoutes } from '../../presentation/routes/campaignRoutes';
 import { characterRoutes } from '../../presentation/routes/characterRoutes';
 import { aiRoutes } from '../../presentation/routes/aiRoutes';
 import { messageRoutes, setChatService } from '../../presentation/routes/messageRoutes';
+import { mapRoutes, setMapChatService } from '../../presentation/routes/mapRoutes';
 import { raceRoutes } from '../../presentation/routes/raceRoutes';
 import { classRoutes } from '../../presentation/routes/classRoutes';
 import { messageControllerRoutes } from '../../presentation/routes/messageControllerRoutes';
@@ -44,6 +45,7 @@ export function createServer(): express.Application & { io?: Server } {
   // Socket.io Chat Service
   const chatService = new ChatService(io);
   setChatService(chatService);
+  setMapChatService(chatService);
 
   // Combat Service
   const combatServiceInstance = new CombatService(chatService);
@@ -54,6 +56,7 @@ export function createServer(): express.Application & { io?: Server } {
   app.use('/api/campaigns', campaignRoutes);
   app.use('/api/characters', characterRoutes);
   app.use('/api/messages', messageRoutes);
+  app.use('/api/maps', mapRoutes);
   app.use('/api/messages/crud', messageControllerRoutes);
   app.use('/api/races', raceRoutes);
   app.use('/api/classes', classRoutes);

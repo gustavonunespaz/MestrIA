@@ -4,7 +4,8 @@ import {
   GetCampaignByIdUseCase,
   UpdateCampaignUseCase,
   DeleteCampaignUseCase,
-  ListCampaignsByCreatorUseCase,
+  ListCampaignsByUserUseCase,
+  JoinCampaignByCodeUseCase,
 } from '@application/use-cases/CampaignUseCases';
 import { CreateCampaignDTO, UpdateCampaignDTO } from '@application/dto/CampaignDTO';
 import { ICampaignRepository } from '@domain/repositories/ICampaignRepository';
@@ -16,14 +17,16 @@ export class CampaignController {
   private getCampaignByIdUseCase: GetCampaignByIdUseCase;
   private updateCampaignUseCase: UpdateCampaignUseCase;
   private deleteCampaignUseCase: DeleteCampaignUseCase;
-  private listCampaignsByCreatorUseCase: ListCampaignsByCreatorUseCase;
+  private listCampaignsByUserUseCase: ListCampaignsByUserUseCase;
+  private joinCampaignByCodeUseCase: JoinCampaignByCodeUseCase;
 
   constructor(campaignRepository: ICampaignRepository) {
     this.createCampaignUseCase = new CreateCampaignUseCase(campaignRepository);
     this.getCampaignByIdUseCase = new GetCampaignByIdUseCase(campaignRepository);
     this.updateCampaignUseCase = new UpdateCampaignUseCase(campaignRepository);
     this.deleteCampaignUseCase = new DeleteCampaignUseCase(campaignRepository);
-    this.listCampaignsByCreatorUseCase = new ListCampaignsByCreatorUseCase(campaignRepository);
+    this.listCampaignsByUserUseCase = new ListCampaignsByUserUseCase(campaignRepository);
+    this.joinCampaignByCodeUseCase = new JoinCampaignByCodeUseCase(campaignRepository);
   }
 
   async create(req: AuthRequest, res: Response): Promise<void> {
@@ -96,7 +99,11 @@ export class CampaignController {
     try {
       const { id } = req.params;
 
-      await this.deleteCampaignUseCase.execute(id);
+      if (!req.userId) {
+        throw new AppError('Usuário não autenticado', 401);
+      }
+
+      await this.deleteCampaignUseCase.execute(id, req.userId);
 
       res.status(204).send();
     } catch (error) {
@@ -114,7 +121,26 @@ export class CampaignController {
         throw new AppError('Usuário não autenticado', 401);
       }
 
-      const result = await this.listCampaignsByCreatorUseCase.execute(req.userId);
+      const result = await this.listCampaignsByUserUseCase.execute(req.userId);
+
+      res.json(result);
+    } catch (error) {
+      if (error instanceof AppError) {
+        res.status(error.statusCode).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: 'Erro interno do servidor' });
+      }
+    }
+  }
+
+  async joinByCode(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.userId) {
+        throw new AppError('Usuário não autenticado', 401);
+      }
+
+      const { inviteCode } = req.body;
+      const result = await this.joinCampaignByCodeUseCase.execute(req.userId, inviteCode);
 
       res.json(result);
     } catch (error) {

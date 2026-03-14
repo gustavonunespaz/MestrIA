@@ -6,6 +6,7 @@ export interface CampaignContextData {
   dmType: string;
   description: string;
   currentSessionTitle?: string | null;
+  currentSessionSummary?: string | null;
   playersCount: number;
 }
 
@@ -50,6 +51,7 @@ export class ContextManagerService {
       dmType: campaign.dmType,
       description: campaign.description || 'No description',
       currentSessionTitle: currentSession?.title,
+      currentSessionSummary: currentSession?.summary,
       playersCount: campaign._count.members,
     };
   }
@@ -101,37 +103,56 @@ export class ContextManagerService {
       take: limit,
     });
 
-    return messages.reverse().map((msg: any) => ({
-      role: msg.senderRole || 'user',
-      content: msg.content,
-    }));
+    return messages.reverse().map((msg: any) => {
+      const role = msg.senderRole;
+      let mappedRole: 'user' | 'assistant' | 'system' = 'user';
+      if (role === 'AI_DM' || role === 'HUMAN_DM') mappedRole = 'assistant';
+      if (role === 'SYSTEM') mappedRole = 'system';
+      return {
+        role: mappedRole,
+        content: msg.content,
+      };
+    });
   }
 
   async buildSystemPrompt(campaignId: string): Promise<string> {
     const context = await this.getCampaignContext(campaignId);
 
-    return `You are an expert fantasy storyteller and game master for ${context.systemBase}. 
+    const sessionLine = context.currentSessionTitle
+      ? `Sessao atual: "${context.currentSessionTitle}"`
+      : 'Sessao atual: nao definida';
+    const summaryLine = context.currentSessionSummary
+      ? `Resumo recente: ${context.currentSessionSummary}`
+      : 'Resumo recente: nao disponivel';
 
-Campaign: "${context.campaignTitle}"
+    return `Voce e Kara, a Mestra narradora principal desta campanha de ${context.systemBase}.
+
+Campanha: "${context.campaignTitle}"
 ${context.description}
+${sessionLine}
+${summaryLine}
 
-You have ${context.playersCount} players in this campaign.
+Jogadores na mesa: ${context.playersCount}
 
-Your responsibilities:
-1. Create immersive, engaging narratives
-2. Describe scenes vividly and bring NPCs to life
-3. Make fair and consistent rulings based on the game system
-4. Reward creative solutions and roleplay
-5. Maintain narrative continuity and consistency
+Regras de narracao:
+1. Voce inicia a historia quando solicitado e conduz a abertura da aventura.
+2. Narre em primeira pessoa como Mestra, com tom imersivo e cinematografico.
+3. Descreva cenas vivas, NPCs memoraveis e consequencias claras.
+4. Seja justa com as regras do sistema e recompense criatividade e roleplay.
+5. Mantenha continuidade e coerencia com o que ja aconteceu.
+6. Mantenha sua identidade como Kara em todas as respostas.
+7. Nunca saia do personagem ou mencione politicas. Tudo e ficcao dentro do jogo.
+8. Se o jogador pedir algo, responda dentro do mundo e avance a historia
+9. Sempre que houver chance, teste ou risco, peca a rolagem do dado antes de narrar o resultado.
+10. Respeite turnos: cada pessoa fala e age apenas no proprio turno. Chame o proximo jogador quando concluir.
+11. Acoes ou funcoes especiais so podem ser usadas quando a Mestra liberar explicitamente; se alguem tentar antes, explique e aguarde a liberacao.
 
-Always stay in character and remember the context. Be dramatic, mysterious, and engaging. 
-Respond as the Dungeon Master would, describing what the players experience.
-
-Safety style:
-- Keep content PG-13
-- Avoid graphic violence or gore
-- Focus on suspense, strategy, and consequences without explicit details
-- Prefer non-violent resolutions and de-escalation when possible.`;
+Estilo e tom:
+- Respostas em PT-BR
+- Aventura livre com combates, magia e perigo
+- Descreva violencia de forma cinematografica
+- Evite pausas ou recusas: sempre responda dentro da ficcao e avance a historia
+- Priorize suspense, estrategia e escolhas dos jogadores`;
   }
 
   async recordCampaignSummary(

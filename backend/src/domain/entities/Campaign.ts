@@ -6,6 +6,7 @@ export interface CampaignProps {
   dmType: 'AI' | 'HUMAN';
   creatorId: string;
   inviteCode?: string | null;
+  membersCount?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +19,7 @@ export class Campaign {
   dmType: 'AI' | 'HUMAN';
   creatorId: string;
   inviteCode?: string | null;
+  membersCount?: number;
   createdAt: Date;
   updatedAt: Date;
 
@@ -29,6 +31,7 @@ export class Campaign {
     this.dmType = props.dmType;
     this.creatorId = props.creatorId;
     this.inviteCode = props.inviteCode;
+    this.membersCount = props.membersCount;
     this.createdAt = props.createdAt;
     this.updatedAt = props.updatedAt;
   }
