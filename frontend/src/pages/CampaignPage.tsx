@@ -11,9 +11,10 @@ import DiceRoller from '@/components/rpg/DiceRoller';
 import CampaignMap from '@/components/rpg/CampaignMap';
 import AmbientSoundscape from '@/components/rpg/AmbientSoundscape';
 import { CreateCharacterDialog } from '@/components/CreateCharacterDialog';
+import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import {
-  ArrowLeft, Send, Users, ScrollText, Dices, MapIcon, Loader2, Sparkles, Copy, Music,
+  ArrowLeft, Send, Users, ScrollText, Dices, MapIcon, Loader2, Sparkles, Copy, Music, RotateCcw,
 } from 'lucide-react';
 import type { Message, Character } from '@/types/models';
 
@@ -33,6 +34,7 @@ const CampaignPage = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const [autoScroll, setAutoScroll] = useState(true);
   const [showTimestamps, setShowTimestamps] = useState(true);
+  const [resettingParty, setResettingParty] = useState(false);
 
   const { data: campaign } = useQuery({
     queryKey: ['campaign', id],
@@ -287,6 +289,27 @@ const CampaignPage = () => {
     { key: 'members', icon: Users, label: 'Grupo' },
   ];
 
+  const isCampaignCreator = campaign?.creatorId === user?.id;
+
+  const handleResetParty = async () => {
+    if (!id || resettingParty) return;
+    const confirmed = window.confirm(
+      'Isso vai resetar o estado da party (HP, status e posicoes no mapa), sem apagar personagens ou historia. Deseja continuar?',
+    );
+    if (!confirmed) return;
+    setResettingParty(true);
+    try {
+      await api.resetPartyState(id);
+      await queryClient.invalidateQueries({ queryKey: ['characters', id] });
+      await queryClient.invalidateQueries({ queryKey: ['map', id] });
+      toast.success('Estado da party resetado.');
+    } catch {
+      toast.error('Nao foi possivel resetar o estado da party.');
+    } finally {
+      setResettingParty(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-background lg:h-screen lg:flex-row">
       {/* Left Column (Avatares + Dados + Mapa) */}
@@ -474,9 +497,22 @@ const CampaignPage = () => {
           {rightTab === 'ambience' && <AmbientSoundscape />}
           {rightTab === 'members' && (
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <h3 className="font-display text-sm font-bold text-foreground">Membros do Grupo</h3>
-                <CreateCharacterDialog campaignId={id!} />
+                <div className="flex items-center gap-2">
+                  {isCampaignCreator && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleResetParty}
+                      disabled={resettingParty}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {resettingParty ? 'Resetando...' : 'Resetar party'}
+                    </Button>
+                  )}
+                  <CreateCharacterDialog campaignId={id!} />
+                </div>
               </div>
               {charactersWithRefs.map((char) => (
                 <div key={char.id} className="flex items-center gap-3 rounded-lg bg-secondary/40 p-3">

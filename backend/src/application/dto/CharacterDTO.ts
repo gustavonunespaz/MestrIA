@@ -6,6 +6,7 @@ export class CreateCharacterDTO {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  isAlive?: boolean;
   isBot?: boolean | null;
   botType?: string | null;
   avatarUrl?: string | null;
@@ -26,6 +27,7 @@ export class CreateCharacterDTO {
     level: number;
     hpCurrent: number;
     hpMax: number;
+    isAlive?: boolean;
     isBot?: boolean | null;
     botType?: string | null;
     avatarUrl?: string | null;
@@ -48,6 +50,7 @@ export class CreateCharacterDTO {
     this.level = data.level;
     this.hpCurrent = data.hpCurrent;
     this.hpMax = data.hpMax;
+    this.isAlive = data.isAlive;
     this.attributes = data.attributes;
   }
 }
@@ -57,6 +60,7 @@ export class UpdateCharacterDTO {
   level?: number;
   hpCurrent?: number;
   hpMax?: number;
+  isAlive?: boolean;
   isBot?: boolean | null;
   botType?: string | null;
   avatarUrl?: string | null;
@@ -74,6 +78,7 @@ export class UpdateCharacterDTO {
     level?: number;
     hpCurrent?: number;
     hpMax?: number;
+    isAlive?: boolean;
     isBot?: boolean | null;
     botType?: string | null;
     avatarUrl?: string | null;
@@ -90,6 +95,7 @@ export class UpdateCharacterDTO {
     this.level = data.level;
     this.hpCurrent = data.hpCurrent;
     this.hpMax = data.hpMax;
+    this.isAlive = data.isAlive;
     this.isBot = data.isBot;
     this.botType = data.botType;
     this.avatarUrl = data.avatarUrl;
@@ -103,6 +109,7 @@ export class CharacterResponseDTO {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  isAlive: boolean;
   isBot?: boolean | null;
   botType?: string | null;
   avatarUrl?: string | null;
@@ -127,6 +134,7 @@ export class CharacterResponseDTO {
     level: number;
     hpCurrent: number;
     hpMax: number;
+    isAlive: boolean;
     isBot?: boolean | null;
     botType?: string | null;
     avatarUrl?: string | null;
@@ -153,6 +161,7 @@ export class CharacterResponseDTO {
     this.level = data.level;
     this.hpCurrent = data.hpCurrent;
     this.hpMax = data.hpMax;
+    this.isAlive = data.isAlive;
     this.userId = data.userId;
     this.campaignId = data.campaignId;
     this.raceId = data.raceId;

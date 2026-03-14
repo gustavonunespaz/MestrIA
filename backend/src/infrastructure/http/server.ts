@@ -13,6 +13,7 @@ import { classRoutes } from '../../presentation/routes/classRoutes';
 import { messageControllerRoutes } from '../../presentation/routes/messageControllerRoutes';
 import { sessionRoutes } from '../../presentation/routes/sessionRoutes';
 import { botRoutes } from '../../presentation/routes/botRoutes';
+import { partyRoutes, setPartyChatService } from '../../presentation/routes/partyRoutes';
 import { ChatService } from '../socket/ChatService';
 import { combatRoutes, setCombatService } from '../../presentation/controllers/CombatController';
 import { CombatService } from '../services/CombatService';
@@ -46,6 +47,7 @@ export function createServer(): express.Application & { io?: Server } {
   const chatService = new ChatService(io);
   setChatService(chatService);
   setMapChatService(chatService);
+  setPartyChatService(chatService);
 
   // Combat Service
   const combatServiceInstance = new CombatService(chatService);
@@ -64,6 +66,7 @@ export function createServer(): express.Application & { io?: Server } {
   app.use('/api/combat', combatRoutes);
   app.use('/api/ai', aiRoutes);
   app.use('/api/bots', botRoutes);
+  app.use('/api/party', partyRoutes);
 
   // Error handling middleware
   app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -4,6 +4,7 @@ export interface CharacterProps {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  isAlive: boolean;
   isBot?: boolean | null;
   botType?: string | null;
   avatarUrl?: string | null;
@@ -29,6 +30,7 @@ export class Character {
   level: number;
   hpCurrent: number;
   hpMax: number;
+  isAlive: boolean;
   isBot?: boolean | null;
   botType?: string | null;
   avatarUrl?: string | null;
@@ -53,6 +55,7 @@ export class Character {
     this.level = props.level;
     this.hpCurrent = props.hpCurrent;
     this.hpMax = props.hpMax;
+    this.isAlive = props.isAlive;
     this.isBot = props.isBot;
     this.botType = props.botType;
     this.avatarUrl = props.avatarUrl;

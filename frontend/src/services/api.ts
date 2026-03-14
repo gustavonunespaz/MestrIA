@@ -123,6 +123,10 @@ export const api = {
   generateCampaignMap: (campaignId: string) => request<CampaignMap>(`/maps/campaign/${campaignId}/generate`, { method: 'POST' }),
   updateCampaignMapPositions: (campaignId: string, positions: Record<string, { x: number; y: number }>) =>
     request<CampaignMap>(`/maps/campaign/${campaignId}/positions`, { method: 'PATCH', body: JSON.stringify({ positions }) }),
+
+  // Party
+  resetPartyState: (campaignId: string) =>
+    request<{ success: boolean }>(`/party/campaign/${campaignId}/reset`, { method: 'POST' }),
 };
 
 function normalizeAuthResponse(res: any): AuthResponse {

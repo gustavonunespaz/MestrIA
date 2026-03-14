@@ -28,6 +28,7 @@ export class CreateCharacterUseCase {
       level: dto.level,
       hpCurrent: dto.hpCurrent,
       hpMax: dto.hpMax,
+      isAlive: dto.isAlive ?? true,
       isBot: dto['isBot'] || false,
       botType: dto['botType'],
       avatarUrl: dto['avatarUrl'],
@@ -49,6 +50,7 @@ export class CreateCharacterUseCase {
       level: created.level,
       hpCurrent: created.hpCurrent,
       hpMax: created.hpMax,
+      isAlive: created.isAlive,
       isBot: created.isBot,
       botType: created.botType,
       avatarUrl: created.avatarUrl,
@@ -79,6 +81,7 @@ export class GetCharacterByIdUseCase {
       level: character.level,
       hpCurrent: character.hpCurrent,
       hpMax: character.hpMax,
+      isAlive: character.isAlive,
       isBot: character.isBot,
       botType: character.botType,
       avatarUrl: character.avatarUrl,
@@ -108,6 +111,7 @@ export class UpdateCharacterUseCase {
     if (dto.level) character.level = dto.level;
     if (dto.hpCurrent !== undefined) character.hpCurrent = dto.hpCurrent;
     if (dto.hpMax) character.hpMax = dto.hpMax;
+    if (dto.isAlive !== undefined) character.isAlive = dto.isAlive;
     if (dto.avatarUrl !== undefined) character.avatarUrl = dto.avatarUrl;
     if (dto.attributes) {
       character.attributes = {
@@ -125,6 +129,7 @@ export class UpdateCharacterUseCase {
       level: updated.level,
       hpCurrent: updated.hpCurrent,
       hpMax: updated.hpMax,
+      isAlive: updated.isAlive,
       isBot: updated.isBot,
       botType: updated.botType,
       avatarUrl: updated.avatarUrl,
@@ -167,6 +172,7 @@ export class ListCharactersByCampaignUseCase {
           level: character.level,
           hpCurrent: character.hpCurrent,
           hpMax: character.hpMax,
+          isAlive: character.isAlive,
           isBot: character.isBot,
           botType: character.botType,
           avatarUrl: character.avatarUrl,
@@ -196,6 +202,7 @@ export class ListCharactersByUserUseCase {
           level: character.level,
           hpCurrent: character.hpCurrent,
           hpMax: character.hpMax,
+          isAlive: character.isAlive,
           isBot: character.isBot,
           botType: character.botType,
           avatarUrl: character.avatarUrl,
