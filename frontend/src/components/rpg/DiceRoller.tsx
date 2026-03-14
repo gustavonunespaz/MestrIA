@@ -20,9 +20,18 @@ interface RollResult {
 interface DiceRollerProps {
   onRoll?: (result: RollResult) => void;
   abilityScores?: Partial<Record<'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma', number>>;
+  disabled?: boolean;
+  disabledReason?: string;
+  enabledReason?: string;
 }
 
-const DiceRoller = ({ onRoll, abilityScores = {} }: DiceRollerProps) => {
+const DiceRoller = ({
+  onRoll,
+  abilityScores = {},
+  disabled = false,
+  disabledReason,
+  enabledReason,
+}: DiceRollerProps) => {
   const [results, setResults] = useState<RollResult[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [mode, setMode] = useState<RollMode>('normal');
@@ -60,7 +69,15 @@ const DiceRoller = ({ onRoll, abilityScores = {} }: DiceRollerProps) => {
     }
   };
 
+  const showBlockedToast = () => {
+    toast.message(disabledReason || 'Rolagem bloqueada. Aguarde a Mestra liberar.');
+  };
+
   const rollDice = (dice: string, modifier = 0, label?: string) => {
+    if (disabled) {
+      showBlockedToast();
+      return;
+    }
     const sides = parseInt(dice.slice(1));
     let rolls = Array.from({ length: quantity }, () => Math.floor(Math.random() * sides) + 1);
     let rawRolls: number[] | undefined;
@@ -95,11 +112,30 @@ const DiceRoller = ({ onRoll, abilityScores = {} }: DiceRollerProps) => {
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
-        <Dices className="h-4 w-4 text-primary" />
-        Rolagem de Dados
-      </h3>
+    <div className={`space-y-4 ${disabled ? 'opacity-70' : ''}`}>
+      <div className="flex items-center justify-between">
+        <h3 className="flex items-center gap-2 font-display text-sm font-bold text-foreground">
+          <Dices className="h-4 w-4 text-primary" />
+          Rolagem de Dados
+        </h3>
+        <span
+          className={`text-[10px] font-semibold uppercase tracking-wide ${
+            disabled ? 'text-muted-foreground' : 'text-accent'
+          }`}
+        >
+          {disabled ? 'Bloqueado' : 'Liberado'}
+        </span>
+      </div>
+      {disabled && (
+        <p className="text-[11px] text-muted-foreground">
+          {disabledReason || 'Aguarde a Mestra liberar a rolagem.'}
+        </p>
+      )}
+      {!disabled && (
+        <p className="text-[11px] text-muted-foreground">
+          {enabledReason || 'Rolagem liberada pela Mestra.'}
+        </p>
+      )}
 
       <div className="flex items-center gap-2">
         <label className="text-xs text-muted-foreground">Qtd:</label>

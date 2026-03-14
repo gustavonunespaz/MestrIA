@@ -207,11 +207,46 @@ const CampaignPage = () => {
 
   const isDM = (role?: string) => role === 'AI_DM' || role === 'HUMAN_DM';
   const getDMLabel = (role?: string) => (role === 'AI_DM' ? '🎭 Kara' : '🎭 Mestre');
+  const normalizeText = (value: string) => value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  const isRollRequest = (content?: string) => {
+    if (!content) return false;
+    const text = normalizeText(content);
+    return text.includes('[rolagem]');
+  };
   const getCharacterNameForMessage = (msg: Message) => {
     if (isDM(msg.senderRole)) return getDMLabel(msg.senderRole);
     const character = charactersWithRefs.find((char) => char.userId === msg.senderId);
     return character?.name || msg.sender?.name || 'Personagem';
   };
+
+  const isHumanDMUser = campaign?.dmType === 'HUMAN' && campaign?.creatorId === user?.id;
+  const diceLock = useMemo(() => {
+    if (isHumanDMUser) {
+      return { locked: false, reason: '', enabledReason: 'Rolagem sempre liberada para a Mestra.' };
+    }
+
+    let lastRequestIndex = -1;
+    messages.forEach((msg, index) => {
+      if (isDM(msg.senderRole) && isRollRequest(msg.content)) {
+        lastRequestIndex = index;
+      }
+    });
+
+    if (lastRequestIndex === -1) {
+      return { locked: true, reason: 'Aguarde a Mestra pedir a rolagem com [ROLAGEM].', enabledReason: '' };
+    }
+
+    const hasRollAfterRequest = messages.slice(lastRequestIndex + 1).some((msg) => Boolean(msg.diceRoll));
+    if (hasRollAfterRequest) {
+      return { locked: true, reason: 'A rolagem ja foi feita. Aguarde nova solicitacao da Mestra com [ROLAGEM].', enabledReason: '' };
+    }
+
+    return { locked: false, reason: '', enabledReason: 'Rolagem liberada pela Mestra. Role agora.' };
+  }, [messages, isHumanDMUser, isDM, isRollRequest]);
 
   const handleCopyInvite = async () => {
     if (!campaign?.inviteCode) return;
@@ -284,6 +319,9 @@ const CampaignPage = () => {
           <div className="max-h-[38vh] overflow-y-auto border-b border-border p-4">
             <DiceRoller
               onRoll={handleRoll}
+              disabled={diceLock.locked}
+              disabledReason={diceLock.reason}
+              enabledReason={diceLock.enabledReason}
               abilityScores={{
                 strength: Number.isFinite(Number(selectedCharacter?.attributes?.strength)) ? Number(selectedCharacter?.attributes?.strength) : undefined,
                 dexterity: Number.isFinite(Number(selectedCharacter?.attributes?.dexterity)) ? Number(selectedCharacter?.attributes?.dexterity) : undefined,
